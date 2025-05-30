@@ -33,13 +33,13 @@ def dashboard():
     
     # Fetch recent parking history for the user (both active and completed for the table)
     user_reservations_table = Reservation.query.filter_by(user_id=current_user.id)\
-                                       .order_by(Reservation.parking_timestamp.desc()).limit(5).all()
+                                           .order_by(Reservation.parking_timestamp.desc()).limit(5).all()
     
     # Fetch data for parking cost chart (last 5 completed reservations)
     completed_reservations_chart = Reservation.query.filter_by(user_id=current_user.id)\
-                                        .filter(Reservation.leaving_timestamp.isnot(None))\
-                                        .filter(Reservation.parking_cost.isnot(None))\
-                                        .order_by(Reservation.leaving_timestamp.desc()).limit(5).all()
+                                             .filter(Reservation.leaving_timestamp.isnot(None))\
+                                             .filter(Reservation.parking_cost.isnot(None))\
+                                             .order_by(Reservation.leaving_timestamp.desc()).limit(5).all()
     
     parking_cost_chart_data = []
     if completed_reservations_chart:
@@ -60,11 +60,11 @@ def dashboard():
 
     # Data for Most Visited Lots Chart (Last 10 Completed Parkings)
     last_ten_completed_reservations = Reservation.query.filter_by(user_id=current_user.id)\
-                                          .filter(Reservation.leaving_timestamp.isnot(None))\
-                                          .join(ParkingSpot, Reservation.spot_id == ParkingSpot.id)\
-                                          .join(ParkingLot, ParkingSpot.lot_id == ParkingLot.id)\
-                                          .add_columns(ParkingLot.name.label("lot_name"))\
-                                          .order_by(desc(Reservation.leaving_timestamp)).limit(10).all()
+                                                 .filter(Reservation.leaving_timestamp.isnot(None))\
+                                                 .join(ParkingSpot, Reservation.spot_id == ParkingSpot.id)\
+                                                 .join(ParkingLot, ParkingSpot.lot_id == ParkingLot.id)\
+                                                 .add_columns(ParkingLot.name.label("lot_name"))\
+                                                 .order_by(desc(Reservation.leaving_timestamp)).limit(10).all()
     
     lot_visit_counts = Counter()
     if last_ten_completed_reservations:
@@ -90,44 +90,61 @@ def view_lot_spots(lot_id):
         return redirect(url_for('admin_routes.view_spots', lot_id=lot_id)) # Or some other admin page
 
     lot = ParkingLot.query.get_or_404(lot_id)
-    # Spots ordered by name for consistency, similar to admin view
+    # Spots ordered by spot_number for consistency, similar to admin view
     spots = ParkingSpot.query.filter_by(lot_id=lot.id).order_by(ParkingSpot.spot_number).all()
-    return render_template('user/view_lot_spots_user.html', title=f"Spots in {lot.name}", lot=lot, spots=spots, ParkingSpot=ParkingSpot)
+    
+    # Calculate available spots
+    available_spots_count = ParkingSpot.query.filter_by(lot_id=lot_id, status='A').count()
 
-# Placeholder for booking a spot
-@bp.route('/spot/<int:spot_id>/book', methods=['GET', 'POST'])
+    return render_template('user/view_lot_spots_user.html', title=f"Spots in {lot.name}", lot=lot, spots=spots, available_spots_count=available_spots_count)
+
+
+# --- START OF MODIFICATIONS FOR BOOKING LOGIC ---
+
+# ROUTE CHANGE: Now accepts lot_id instead of spot_id
+@bp.route('/lot/<int:lot_id>/book', methods=['GET', 'POST'])
 @login_required
-def book_spot(spot_id):
-    spot = ParkingSpot.query.get_or_404(spot_id)
-    lot = ParkingLot.query.get_or_404(spot.lot_id)
+def book_spot(lot_id):
+    lot = ParkingLot.query.get_or_404(lot_id)
 
     if current_user.is_admin:
         flash('Admins cannot book spots directly. This page is for user bookings.', 'warning')
-        return redirect(url_for('admin_routes.view_spot_details', spot_id=spot.id))
+        # Redirect admin to their relevant view for this lot
+        return redirect(url_for('admin_routes.view_spots', lot_id=lot.id))
 
-    if spot.status != 'A': # Check status field
-        flash(f'Spot {spot.spot_number} in {lot.name} is currently unavailable.', 'danger')
-        return redirect(url_for('user_routes.view_lot_spots', lot_id=spot.lot_id))
+    # Find the first available spot in this parking lot
+    # 'A' is for Available. Ordering by spot_number to ensure "first available" is consistent.
+    available_spot = ParkingSpot.query.filter_by(lot_id=lot.id, status='A').order_by(ParkingSpot.spot_number).first()
+
+    if not available_spot:
+        flash(f'No available spots found in {lot.name} at the moment. Please try another lot.', 'danger')
+        return redirect(url_for('user_routes.dashboard')) # Redirect back to dashboard
 
     form = BookSpotForm()
     if form.validate_on_submit():
         try:
+            # Create the reservation for the found available_spot
             reservation = Reservation(
                 user_id=current_user.id,
-                spot_id=spot.id,
+                spot_id=available_spot.id, # Use the ID of the allocated spot
                 vehicle_number=form.vehicle_number.data
-                # parking_timestamp is default utcnow
+                # parking_timestamp is default utcnow in the model
             )
-            spot.status = 'O' # Set status to Occupied
+            available_spot.status = 'O' # Set the allocated spot's status to Occupied
             db.session.add(reservation)
             db.session.commit()
-            flash(f'Successfully booked spot {spot.spot_number} in {lot.name} for vehicle {form.vehicle_number.data}!', 'success')
+            flash(f'Successfully booked spot {available_spot.spot_number} in {lot.name} for vehicle {form.vehicle_number.data}!', 'success')
             return redirect(url_for('user_routes.dashboard')) # Redirect to user dashboard or a 'my bookings' page
         except Exception as e:
             db.session.rollback()
             flash(f'Error booking spot: {e}', 'danger')
     
-    return render_template('user/book_spot.html', title=f'Book Spot: {spot.spot_number}', form=form, spot=spot, lot=lot)
+    # When GET request, display the form.
+    # The template needs to know which lot we are trying to book a spot in.
+    return render_template('user/book_spot.html', title=f'Book Spot in {lot.name}', form=form, lot=lot, allocated_spot=available_spot)
+
+# --- END OF MODIFICATIONS FOR BOOKING LOGIC ---
+
 
 @bp.route('/profile/edit', methods=['GET', 'POST'])
 @login_required
@@ -160,15 +177,21 @@ def release_spot_page(reservation_id):
         flash('This spot has already been released.', 'info')
         return redirect(url_for('user_routes.dashboard'))
     
-    # Logic to calculate cost can be added here if needed before showing the page
-    # For now, just showing a confirmation.
-    # spot = reservation.parking_spot
-    # lot = spot.parking_lot
-    # duration = datetime.utcnow() - reservation.parking_timestamp
-    # hours = ceil(duration.total_seconds() / 3600)
-    # cost = hours * lot.price_per_hour
+    # Calculate potential cost before showing the page, for user's information
+    spot = reservation.parking_spot
+    lot = spot.parking_lot
+    current_time = datetime.utcnow()
+    duration = current_time - reservation.parking_timestamp
+    hours = (duration.total_seconds() + 3599) // 3600 # Round up to the nearest hour
+    if hours < 1: hours = 1 # Minimum 1 hour charge
+    
+    estimated_cost = hours * lot.price_per_hour
 
-    return render_template('user/release_spot.html', title='Release Parking Spot', reservation=reservation)
+    return render_template('user/release_spot.html', title='Release Parking Spot', 
+                           reservation=reservation, 
+                           estimated_cost=estimated_cost,
+                           current_time=current_time) # Pass current_time for display if needed
+
 
 # Placeholder for Release Spot Action (POST request to perform release)
 @bp.route('/reservation/<int:reservation_id>/release/confirm', methods=['POST'])
@@ -188,15 +211,19 @@ def release_spot_action(reservation_id):
         
         reservation.leaving_timestamp = datetime.utcnow()
         
+        # Calculate duration and cost
         duration = reservation.leaving_timestamp - reservation.parking_timestamp
+        # Round up to the nearest hour (e.g., 1 hour 1 minute becomes 2 hours)
+        # Add 3599 seconds (1 hour - 1 second) to round up correctly before integer division
         hours = (duration.total_seconds() + 3599) // 3600 
-        if hours < 1: hours = 1 
+        if hours < 1: hours = 1 # Minimum 1 hour charge
+        
         reservation.parking_cost = hours * lot.price_per_hour
         
-        spot.status = 'A' # Set status to Available
+        spot.status = 'A' # Set status to Available (released)
         db.session.commit()
         flash(f'Spot {spot.spot_number} in {lot.name} released. Total cost: ₹{reservation.parking_cost:.2f}', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Error releasing spot: {e}', 'danger')
-    return redirect(url_for('user_routes.dashboard')) 
+    return redirect(url_for('user_routes.dashboard'))
