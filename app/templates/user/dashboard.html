@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block head_css %}
+    {# Add Chart.js if you haven't loaded it globally or via Webpack/Parcel #}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">Welcome, {{ current_user.username }}!</h1>
+        <a href="{{ url_for('user_routes.edit_profile') }}" class="btn btn-outline-primary">Edit Profile</a> {# Placeholder for Edit Profile #}
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Recent Parking History -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4 class="mb-0">Recent Parking History</h4>
+        </div>
+        <div class="card-body">
+            {% if user_reservations_table %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Lot Name</th>
+                                <th>Spot</th>
+                                <th>Vehicle No.</th>
+                                <th>Parked At</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for res in user_reservations_table %}
+                                <tr>
+                                    <td>{{ res.parking_spot.parking_lot.name }}</td>
+                                    <td>{{ res.parking_spot.spot_number }}</td>
+                                    <td>{{ res.vehicle_number if res.vehicle_number else 'N/A'}}</td>
+                                    <td>{{ res.parking_timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        {% if res.leaving_timestamp %}
+                                            <span class="badge bg-secondary">Completed</span>
+                                        {% else %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if not res.leaving_timestamp %}
+                                            <a href="{{ url_for('user_routes.release_spot_page', reservation_id=res.id) }}" class="btn btn-warning btn-sm">Release</a> {# Placeholder for Release #}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="mb-0">You have no recent parking history.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Parking Cost Chart -->
+    {% if parking_cost_chart_data %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4 class="mb-0">Recent Parking Costs (₹)</h4>
+        </div>
+        <div class="card-body">
+            <canvas id="parkingCostChart" style="height: 300px; max-height: 300px;"></canvas>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-6">
+            <!-- Parking Frequency Chart -->
+            {% if parking_frequency_data %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Parking Frequency (Last 7 Days)</h4>
+                </div>
+                <div class="card-body">
+                    <canvas id="parkingFrequencyChart" style="height: 300px; max-height: 300px;"></canvas>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        <div class="col-md-6">
+            <!-- Most Visited Lots Chart -->
+            {% if most_visited_lots_data %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Most Visited Lots (Last 10)</h4>
+                </div>
+                <div class="card-body">
+                    <canvas id="mostVisitedLotsChart" style="height: 300px; max-height: 300px;"></canvas>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Search Parking Lots -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4 class="mb-0">Search Parking Lots</h4>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('user_routes.dashboard') }}" class="row g-3 align-items-center">
+                <div class="col-auto flex-grow-1">
+                    <label for="search_term" class="visually-hidden">Search by Name, Address, or Pin Code</label>
+                    <input type="text" class="form-control" id="search_term" name="search_term" placeholder="Enter Name, Address, or Pin Code" value="{{ search_term if search_term }}">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary">Search</button>
+                    {% if search_term %}
+                        <a href="{{ url_for('user_routes.dashboard') }}" class="btn btn-outline-secondary ms-2">Clear</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Available Parking Lots -->
+    <div class="card">
+        <div class="card-header">
+             <h4 class="mb-0">{{ 'Search Results' if search_term else 'Available Parking Lots' }}</h4>
+        </div>
+        <div class="card-body">
+            {% if parking_lots %}
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                    {% for lot in parking_lots %}
+                        <div class="col">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ lot.name }}</h5>
+                                    <p class="card-text">
+                                        <strong>Location:</strong> {{ lot.address if lot.address else 'N/A' }}<br>
+                                        <strong>Pin Code:</strong> {{ lot.pin_code if lot.pin_code else 'N/A' }}<br>
+                                        <strong>Available Spots:</strong> {{ lot.spots.filter_by(status='A').count() }}/{{ lot.maximum_capacity }}<br>
+                                        <strong>Price:</strong> ₹{{ "%.2f"|format(lot.price_per_hour) }}/hour
+                                    </p>
+                                    <a href="{{ url_for('user_routes.view_lot_spots', lot_id=lot.id) }}" class="btn btn-primary">View & Book Spots</a>
+                                </div>
+                                <div class="card-footer">
+                                    <small class="text-muted">Lot ID: {{ lot.id }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info" role="alert">
+                    {% if search_term %}
+                        No parking lots found matching your search criteria "<b>{{ search_term }}</b>".
+                    {% else %}
+                        No parking lots are currently available or configured in the system.
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Parking Cost Chart for User Dashboard
+        const parkingCostCtx = document.getElementById('parkingCostChart');
+        if (parkingCostCtx) {
+            const parkingCostData = {{ parking_cost_chart_data|tojson }};
+            if (parkingCostData && parkingCostData.length > 0) {
+                new Chart(parkingCostCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: parkingCostData.map(row => row[0]),
+                        datasets: [{
+                            label: 'Parking Cost (₹)',
+                            data: parkingCostData.map(row => row[1]),
+                            backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return '₹' + value;
+                                    }
+                                }
+                            }
+                        },
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += '₹' + context.parsed.y.toFixed(2);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Parking Frequency Chart
+        const parkingFrequencyCtx = document.getElementById('parkingFrequencyChart');
+        if (parkingFrequencyCtx) {
+            const parkingFrequencyData = {{ parking_frequency_data|tojson }};
+            if (parkingFrequencyData && parkingFrequencyData.length > 0) {
+                new Chart(parkingFrequencyCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: parkingFrequencyData.map(row => row[0]),
+                        datasets: [{
+                            label: 'Parking Sessions',
+                            data: parkingFrequencyData.map(row => row[1]),
+                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1 // Ensure y-axis shows whole numbers for counts
+                                }
+                            }
+                        },
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Most Visited Lots Chart
+        const mostVisitedLotsCtx = document.getElementById('mostVisitedLotsChart');
+        if (mostVisitedLotsCtx) {
+            const mostVisitedLotsData = {{ most_visited_lots_data|tojson }};
+            if (mostVisitedLotsData && mostVisitedLotsData.length > 0) {
+                new Chart(mostVisitedLotsCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: mostVisitedLotsData.map(row => row[0]),
+                        datasets: [{
+                            label: 'Visits',
+                            data: mostVisitedLotsData.map(row => row[1]),
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.5)',
+                                'rgba(54, 162, 235, 0.5)',
+                                'rgba(255, 206, 86, 0.5)',
+                                'rgba(75, 192, 192, 0.5)',
+                                'rgba(153, 102, 255, 0.5)',
+                                'rgba(255, 159, 64, 0.5)',
+                                'rgba(199, 199, 199, 0.5)',
+                                'rgba(83, 102, 255, 0.5)',
+                                'rgba(255, 130, 86, 0.5)',
+                                'rgba(40, 150, 150, 0.5)'
+                            ],
+                            borderColor: [
+                                'rgba(255, 99, 132, 1)',
+                                'rgba(54, 162, 235, 1)',
+                                'rgba(255, 206, 86, 1)',
+                                'rgba(75, 192, 192, 1)',
+                                'rgba(153, 102, 255, 1)',
+                                'rgba(255, 159, 64, 1)',
+                                'rgba(199, 199, 199, 1)',
+                                'rgba(83, 102, 255, 1)',
+                                'rgba(255, 130, 86, 1)',
+                                'rgba(40, 150, 150, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: true,
+                                text: 'Most Visited Lots (Last 10 Completed Parkings)'
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    });
+</script>
+{% endblock %} 

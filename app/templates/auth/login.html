@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "bootstrap5/form.html" import render_form %}
+
+{% block title %}Sign In - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h1 class="card-title text-center mb-4">Sign In</h1>
+                {{ render_form(form, action=url_for('auth.login', next=request.args.get('next')), method='post', novalidate=True) }}
+                <hr>
+                <p class="text-center">New User? <a href="{{ url_for('auth.register') }}">Click to Register!</a></p>
+                {# Add admin login note if needed - though admin uses same form #}
+                {% if 'admin' in request.args.get('next', '') or request.endpoint == 'admin_routes.dashboard' %}
+                    <p class="text-center small text-muted">Default admin: admin / admin_password (change this!)</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

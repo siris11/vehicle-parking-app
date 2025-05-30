@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ title }} (Lot: <a href="{{ url_for('admin_routes.view_lot_spots', lot_id=spot.parking_lot.id) }}">{{ spot.parking_lot.name }}</a>)</h1>
+    <a href="{{ url_for('admin_routes.view_lot_spots', lot_id=spot.parking_lot.id) }}" class="btn btn-sm btn-outline-info">Back to Lot Overview</a>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        Spot Information
+    </div>
+    <div class="card-body">
+        <p><strong>Spot Number:</strong> {{ spot.spot_number }}</p>
+        <p><strong>Status:</strong> 
+            {% if spot.status == 'O' %}
+                <span class="badge bg-danger">Occupied</span>
+            {% elif spot.status == 'A' %}
+                <span class="badge bg-success">Available</span>
+            {% else %}
+                <span class="badge bg-secondary">{{ spot.status }}</span>
+            {% endif %}
+        </p>
+        <p><strong>Parking Lot:</strong> <a href="{{ url_for('admin_routes.view_lot_spots', lot_id=spot.parking_lot.id) }}">{{ spot.parking_lot.name }}</a></p>
+        <p><strong>Price Per Hour for this Lot:</strong> ₹{{ "%.2f"|format(spot.parking_lot.price_per_hour) }}</p>
+    </div>
+    {% if spot.status == 'A' %}
+    <div class="card-footer">
+        <form action="{{ url_for('admin_routes.delete_spot', spot_id=spot.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to permanently delete this spot? This will also reduce the lot capacity.');">
+            <button type="submit" class="btn btn-danger btn-sm">Delete This Spot</button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+{% if spot.status == 'O' and reservation %}
+    <div class="card mt-4">
+        <div class="card-header">
+            Current Reservation Details
+        </div>
+        <div class="card-body">
+            <p><strong>Reserved By:</strong> {{ reservation.tenant.username }} (User ID: {{ reservation.user_id }})</p>
+            <p><strong>Email:</strong> {{ reservation.tenant.email }}</p>
+            <p><strong>Parking Timestamp:</strong> {{ reservation.parking_timestamp.strftime('%Y-%m-%d %H:%M:%S') }} (UTC)</p>
+            <p><strong>Vehicle Number:</strong> {{ reservation.vehicle_number if reservation.vehicle_number else 'Not Provided' }}</p>
+            {# Calculation of duration and current cost could be added here if needed #}
+        </div>
+    </div>
+{% elif spot.status == 'O' and not reservation %}
+    <div class="alert alert-warning mt-4" role="alert">
+        This spot is marked Occupied, but no active reservation record was found. This might indicate an inconsistency.
+    </div>
+{% elif spot.status == 'A' %}
+     <div class="alert alert-info mt-4" role="alert">
+        This spot is currently available.
+    </div>
+{% endif %}
+
+<h4 class="mt-4">Reservation History for this Spot</h4>
+{% if spot.reservations.order_by(Reservation.parking_timestamp.desc()).all() %}
+    <table class="table table-sm table-hover mt-2">
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Parked At</th>
+                <th>Left At</th>
+                <th>Cost</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for res in spot.reservations.order_by(Reservation.parking_timestamp.desc()).all() %}
+                <tr>
+                    <td>{{ res.tenant.username }}</td>
+                    <td>{{ res.parking_timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ res.leaving_timestamp.strftime('%Y-%m-%d %H:%M') if res.leaving_timestamp else 'Still Parked' }}</td>
+                    <td>{{ '₹%.2f'|format(res.parking_cost) if res.parking_cost is not none else 'N/A' }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No reservation history for this spot.</p>
+{% endif %}
+
+{% endblock %} 

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ title }}</h1>
+</div>
+
+{% if users %}
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Reservations Made</th> {# Placeholder for a count #}
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user_item in users %}
+            <tr>
+                <td>{{ user_item.id }}</td>
+                <td>{{ user_item.username }}</td>
+                <td>{{ user_item.email }}</td>
+                <td>{{ user_item.reservations.count() }}</td>
+                <td>
+                    <a href="#" class="btn btn-sm btn-outline-info">View Details</a> {# Placeholder for a user detail page if needed #}
+                    {# Add other actions like disable user if needed #}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info" role="alert">
+  No registered users found (excluding admin).
+</div>
+{% endif %}
+{% endblock %}
+ 

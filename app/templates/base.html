@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    {% block head_meta %}{% endblock %}
+    <title>{% block title %}{{ title|default('Vehicle Parking App') }}{% endblock %}</title>
+    {{ bootstrap.load_css() }}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('routes.index') }}">ParkingApp</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('routes.index') }}">Home</a>
+                    </li>
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.is_admin %}
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_routes.dashboard') }}">Admin Dashboard</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_routes.list_parking_lots') }}">Manage Lots</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_routes.list_users') }}">View Users</a></li>
+                        {% else %}
+                            <li class="nav-item"><a class="nav-link" href="#">User Dashboard</a></li> {# Placeholder user_routes.dashboard #}
+                            <li class="nav-item"><a class="nav-link" href="#">Book Parking</a></li> {# Placeholder user_routes.book_spot #}
+                        {% endif %}
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item"><span class="navbar-text">Logged in as: {{ current_user.username }}</span></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a></li>
+                    {% else %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}">Login</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.register') }}">Register</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer mt-auto py-3 bg-light">
+        <div class="container text-center">
+            <span class="text-muted">Vehicle Parking App &copy; {{ datetime.utcnow().year }}</span>
+        </div>
+    </footer>
+
+    {{ bootstrap.load_js() }}
+    {% block scripts %}{% endblock %}
+</body>
+</html> 
