@@ -11,53 +11,55 @@
             
             <div class="card mb-4">
                 <div class="card-body">
-                    <h5 class="card-title">Spot Details</h5>
+                    <h5 class="card-title">Booking Details for Parking Lot</h5>
                     <p class="card-text">
-                        <strong>Parking Lot:</strong> {{ lot.name }} ({{ lot.location }})
+                        <strong>Parking Lot:</strong> {{ lot.name }} ({{ lot.address }}, {{ lot.pin_code }})
                         <br>
-                        <strong>Spot Name/Number:</strong> {{ spot.spot_number }}
+                        <strong>Price:</strong> ₹{{ lot.price_per_hour }}/hour
                         <br>
-                        <strong>Status:</strong> 
-                        {% if spot.status == 'A' %}
-                            <span class="badge bg-success">Available</span>
+                        <hr> {# Add a separator #}
+                        <strong>Important:</strong> You are booking a spot within this lot.
+                        <br>
+                        The system will automatically allocate the **first available spot** to your vehicle.
+                        {% if allocated_spot %}
+                            <p class="mt-2 mb-0">You will be allocated to spot: <strong>{{ allocated_spot.spot_number }}</strong></p>
+                            <p class="text-muted small">Please proceed if this is acceptable.</p>
                         {% else %}
-                            <span class="badge bg-danger">Not Available</span>
+                            <p class="text-danger mt-2 mb-0">No available spots found in this lot at the moment.</p>
                         {% endif %}
-                        <br>
-                        <strong>Price:</strong> ₹{{ lot.price_per_hour }}/hour (Note: Duration and final cost calculation will be implemented later)
                     </p>
                 </div>
             </div>
 
-            {% if spot.status == 'A' %}
+            {# The form for entering vehicle number should only show if an allocated_spot was found #}
+            {% if allocated_spot %}
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">Enter Your Vehicle Number to Book</h5>
-                        <form method="POST" action="{{ url_for('user_routes.book_spot', spot_id=spot.id) }}" novalidate>
+                        <h5 class="card-title">Enter Your Vehicle Number to Confirm Booking</h5>
+                        {# The form action should now point to the /lot/<int:lot_id>/book route #}
+                        <form method="POST" action="{{ url_for('user_routes.book_spot', lot_id=lot.id) }}" novalidate>
                             {{ form.hidden_tag() }} 
                             
                             <div class="mb-3">
                                 {{ render_field(form.vehicle_number, class="form-control") }}
                             </div>
-
-                            <!-- Future fields like duration, start/end time could go here -->
                             
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                <a href="{{ url_for('user_routes.view_lot_spots', lot_id=spot.lot_id) }}" class="btn btn-outline-secondary me-md-2">Cancel</a>
+                                <a href="{{ url_for('user_routes.dashboard') }}" class="btn btn-outline-secondary me-md-2">Cancel</a>
                                 {{ form.submit(class="btn btn-primary") }}
                             </div>
                         </form>
                     </div>
                 </div>
             {% else %}
-                <div class="alert alert-warning" role="alert">
-                    This spot is not currently available for booking.
+                <div class="alert alert-danger" role="alert">
+                    Cannot proceed with booking: No available spots in {{ lot.name }}.
                 </div>
                 <div class="text-center">
-                    <a href="{{ url_for('user_routes.view_lot_spots', lot_id=spot.lot_id) }}" class="btn btn-primary">Back to Spots List</a>
+                    <a href="{{ url_for('user_routes.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
                 </div>
             {% endif %}
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}

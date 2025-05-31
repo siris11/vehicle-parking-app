@@ -1,17 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}{{ title }}{% endblock %}
-
-{% block head_css %}
-    {# Add Chart.js if you haven't loaded it globally or via Webpack/Parcel #}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-{% endblock %}
+{% block title %}User Dashboard{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1 class="mb-0">Welcome, {{ current_user.username }}!</h1>
-        <a href="{{ url_for('user_routes.edit_profile') }}" class="btn btn-outline-primary">Edit Profile</a> {# Placeholder for Edit Profile #}
+        <a href="{{ url_for('user_routes.edit_profile') }}" class="btn btn-outline-primary">Edit Profile</a>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -25,7 +20,7 @@
         {% endif %}
     {% endwith %}
 
-    <!-- Recent Parking History -->
+    {# 1. Recent Parking History (Remains at the top) #}
     <div class="card mb-4">
         <div class="card-header">
             <h4 class="mb-0">Recent Parking History</h4>
@@ -60,7 +55,7 @@
                                     </td>
                                     <td>
                                         {% if not res.leaving_timestamp %}
-                                            <a href="{{ url_for('user_routes.release_spot_page', reservation_id=res.id) }}" class="btn btn-warning btn-sm">Release</a> {# Placeholder for Release #}
+                                            <a href="{{ url_for('user_routes.release_spot_page', reservation_id=res.id) }}" class="btn btn-warning btn-sm">Release</a>
                                         {% else %}
                                             -
                                         {% endif %}
@@ -76,48 +71,7 @@
         </div>
     </div>
 
-    <!-- Parking Cost Chart -->
-    {% if parking_cost_chart_data %}
-    <div class="card mb-4">
-        <div class="card-header">
-            <h4 class="mb-0">Recent Parking Costs (₹)</h4>
-        </div>
-        <div class="card-body">
-            <canvas id="parkingCostChart" style="height: 300px; max-height: 300px;"></canvas>
-        </div>
-    </div>
-    {% endif %}
-
-    <div class="row">
-        <div class="col-md-6">
-            <!-- Parking Frequency Chart -->
-            {% if parking_frequency_data %}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h4 class="mb-0">Parking Frequency (Last 7 Days)</h4>
-                </div>
-                <div class="card-body">
-                    <canvas id="parkingFrequencyChart" style="height: 300px; max-height: 300px;"></canvas>
-                </div>
-            </div>
-            {% endif %}
-        </div>
-        <div class="col-md-6">
-            <!-- Most Visited Lots Chart -->
-            {% if most_visited_lots_data %}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h4 class="mb-0">Most Visited Lots (Last 10)</h4>
-                </div>
-                <div class="card-body">
-                    <canvas id="mostVisitedLotsChart" style="height: 300px; max-height: 300px;"></canvas>
-                </div>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Search Parking Lots -->
+    {# 2. Search Parking Lots and Available Parking Lots (Moved up to second position) #}
     <div class="card mb-4">
         <div class="card-header">
             <h4 class="mb-0">Search Parking Lots</h4>
@@ -138,10 +92,9 @@
         </div>
     </div>
 
-    <!-- Available Parking Lots -->
-    <div class="card">
+    <div class="card mb-4"> {# Moved to be directly after search form #}
         <div class="card-header">
-             <h4 class="mb-0">{{ 'Search Results' if search_term else 'Available Parking Lots' }}</h4>
+               <h4 class="mb-0">{{ 'Search Results' if search_term else 'Available Parking Lots' }}</h4>
         </div>
         <div class="card-body">
             {% if parking_lots %}
@@ -157,7 +110,12 @@
                                         <strong>Available Spots:</strong> {{ lot.spots.filter_by(status='A').count() }}/{{ lot.maximum_capacity }}<br>
                                         <strong>Price:</strong> ₹{{ "%.2f"|format(lot.price_per_hour) }}/hour
                                     </p>
-                                    <a href="{{ url_for('user_routes.view_lot_spots', lot_id=lot.id) }}" class="btn btn-primary">View & Book Spots</a>
+                                    <a href="{{ url_for('user_routes.book_spot', lot_id=lot.id) }}"
+                                       class="btn btn-primary"
+                                       {% if lot.spots.filter_by(status='A').count() == 0 %}disabled{% endif %}>
+                                       {% if lot.spots.filter_by(status='A').count() == 0 %}No Spots Available{% else %}Book a Spot in This Lot{% endif %}
+                                    </a>
+                                    <a href="{{ url_for('user_routes.view_lot_spots', lot_id=lot.id) }}" class="btn btn-outline-secondary mt-2">View Lot Details</a>
                                 </div>
                                 <div class="card-footer">
                                     <small class="text-muted">Lot ID: {{ lot.id }}</small>
@@ -177,160 +135,198 @@
             {% endif %}
         </div>
     </div>
-</div>
+
+    {# 3. Charts/Summaries (Moved to third position) #}
+    <div class="row">
+        {# Parking Cost Chart #}
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-center">Parking Cost Trends</h5>
+                    <canvas id="parkingCostChart" style="max-height: 300px;"></canvas>
+                    <p class="text-muted small text-center mt-2">Shows your parking expenses over time.</p>
+                </div>
+            </div>
+        </div>
+
+        {# Parking Frequency Chart #}
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-center">Parking Frequency</h5>
+                    <canvas id="parkingFrequencyChart" style="max-height: 300px;"></canvas>
+                    <p class="text-muted small text-center mt-2">Tracks how often you park over the last 7 days.</p>
+                </div>
+            </div>
+        </div>
+
+        {# Most Visited Lots Chart (Full Width) #}
+        <div class="col-md-12 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-center">Most Visited Parking Lots</h5>
+                    <canvas id="mostVisitedLotsChart" style="max-height: 400px;"></canvas>
+                    <p class="text-muted small text-center mt-2">Your top parking destinations (based on last 10 completed parkings).</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div> {# End of container #}
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Parking Cost Chart for User Dashboard
-        const parkingCostCtx = document.getElementById('parkingCostChart');
-        if (parkingCostCtx) {
-            const parkingCostData = {{ parking_cost_chart_data|tojson }};
-            if (parkingCostData && parkingCostData.length > 0) {
-                new Chart(parkingCostCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: parkingCostData.map(row => row[0]),
-                        datasets: [{
-                            label: 'Parking Cost (₹)',
-                            data: parkingCostData.map(row => row[1]),
-                            backgroundColor: 'rgba(75, 192, 192, 0.5)',
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    callback: function(value) {
-                                        return '₹' + value;
-                                    }
-                                }
-                            }
-                        },
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: false
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        let label = context.dataset.label || '';
-                                        if (label) {
-                                            label += ': ';
-                                        }
-                                        if (context.parsed.y !== null) {
-                                            label += '₹' + context.parsed.y.toFixed(2);
-                                        }
-                                        return label;
-                                    }
-                                }
-                            }
-                        }
-                    }
+
+        // Helper function to safely get data and initialize chart
+        function createChart(chartId, type, data, options) {
+            const ctx = document.getElementById(chartId);
+            if (ctx && data && data.labels && data.labels.length > 0) { // Check for labels length as well
+                new Chart(ctx, {
+                    type: type,
+                    data: data,
+                    options: options
                 });
+            } else if (ctx) {
+                // Display a message if no data is available
+                const parentDiv = ctx.parentElement;
+                // Remove the canvas element
+                ctx.remove();
+                // Add a message
+                parentDiv.innerHTML += `<div class="alert alert-info text-center mt-3" role="alert">No data available to display this chart yet.</div>`;
+                parentDiv.style.display = 'flex';
+                parentDiv.style.flexDirection = 'column';
+                parentDiv.style.justifyContent = 'center';
+                parentDiv.style.alignItems = 'center';
             }
         }
 
-        // Parking Frequency Chart
-        const parkingFrequencyCtx = document.getElementById('parkingFrequencyChart');
-        if (parkingFrequencyCtx) {
-            const parkingFrequencyData = {{ parking_frequency_data|tojson }};
-            if (parkingFrequencyData && parkingFrequencyData.length > 0) {
-                new Chart(parkingFrequencyCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: parkingFrequencyData.map(row => row[0]),
-                        datasets: [{
-                            label: 'Parking Sessions',
-                            data: parkingFrequencyData.map(row => row[1]),
-                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    stepSize: 1 // Ensure y-axis shows whole numbers for counts
-                                }
-                            }
-                        },
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        }
-                    }
-                });
-            }
-        }
+        // 1. Parking Cost Chart Data & Options
+        const parkingCostRawData = {{ parking_cost_chart_data|tojson }} || [];
+        const parkingCostChartData = {
+            labels: parkingCostRawData.map(row => row[0]),
+            datasets: [{
+                label: 'Parking Cost (₹)',
+                data: parkingCostRawData.map(row => row[1]),
+                backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        };
 
-        // Most Visited Lots Chart
-        const mostVisitedLotsCtx = document.getElementById('mostVisitedLotsChart');
-        if (mostVisitedLotsCtx) {
-            const mostVisitedLotsData = {{ most_visited_lots_data|tojson }};
-            if (mostVisitedLotsData && mostVisitedLotsData.length > 0) {
-                new Chart(mostVisitedLotsCtx, {
-                    type: 'pie',
-                    data: {
-                        labels: mostVisitedLotsData.map(row => row[0]),
-                        datasets: [{
-                            label: 'Visits',
-                            data: mostVisitedLotsData.map(row => row[1]),
-                            backgroundColor: [
-                                'rgba(255, 99, 132, 0.5)',
-                                'rgba(54, 162, 235, 0.5)',
-                                'rgba(255, 206, 86, 0.5)',
-                                'rgba(75, 192, 192, 0.5)',
-                                'rgba(153, 102, 255, 0.5)',
-                                'rgba(255, 159, 64, 0.5)',
-                                'rgba(199, 199, 199, 0.5)',
-                                'rgba(83, 102, 255, 0.5)',
-                                'rgba(255, 130, 86, 0.5)',
-                                'rgba(40, 150, 150, 0.5)'
-                            ],
-                            borderColor: [
-                                'rgba(255, 99, 132, 1)',
-                                'rgba(54, 162, 235, 1)',
-                                'rgba(255, 206, 86, 1)',
-                                'rgba(75, 192, 192, 1)',
-                                'rgba(153, 102, 255, 1)',
-                                'rgba(255, 159, 64, 1)',
-                                'rgba(199, 199, 199, 1)',
-                                'rgba(83, 102, 255, 1)',
-                                'rgba(255, 130, 86, 1)',
-                                'rgba(40, 150, 150, 1)'
-                            ],
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'top',
-                            },
-                            title: {
-                                display: true,
-                                text: 'Most Visited Lots (Last 10 Completed Parkings)'
-                            }
+        const parkingCostChartOptions = {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value;
                         }
                     }
-                });
+                }
+            },
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += '₹' + context.parsed.y.toFixed(2);
+                            }
+                            return label;
+                        }
+                    }
+                }
             }
-        }
+        };
+
+        createChart('parkingCostChart', 'bar', parkingCostChartData, parkingCostChartOptions);
+
+
+        // 2. Parking Frequency Chart Data & Options
+        const parkingFrequencyRawData = {{ parking_frequency_data|tojson }} || [];
+        const parkingFrequencyChartData = {
+            labels: parkingFrequencyRawData.map(row => row[0]),
+            datasets: [{
+                label: 'Parking Sessions',
+                data: parkingFrequencyRawData.map(row => row[1]),
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        };
+
+        const parkingFrequencyChartOptions = {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            },
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        };
+
+        createChart('parkingFrequencyChart', 'bar', parkingFrequencyChartData, parkingFrequencyChartOptions);
+
+
+        // 3. Most Visited Lots Chart Data & Options
+        const mostVisitedLotsRawData = {{ most_visited_lots_data|tojson }} || [];
+        const mostVisitedLotsChartData = {
+            labels: mostVisitedLotsRawData.map(row => row[0]),
+            datasets: [{
+                label: 'Visits',
+                data: mostVisitedLotsRawData.map(row => row[1]),
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.5)', 'rgba(54, 162, 235, 0.5)', 'rgba(255, 206, 86, 0.5)',
+                    'rgba(75, 192, 192, 0.5)', 'rgba(153, 102, 255, 0.5)', 'rgba(255, 159, 64, 0.5)',
+                    'rgba(199, 199, 199, 0.5)', 'rgba(83, 102, 255, 0.5)', 'rgba(255, 130, 86, 0.5)',
+                    'rgba(40, 150, 150, 0.5)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)',
+                    'rgba(199, 199, 199, 1)', 'rgba(83, 102, 255, 1)', 'rgba(255, 130, 86, 1)',
+                    'rgba(40, 150, 150, 1)'
+                ],
+                borderWidth: 1
+            }]
+        };
+
+        const mostVisitedLotsChartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Most Visited Lots (Last 10 Completed Parkings)'
+                }
+            }
+        };
+
+        createChart('mostVisitedLotsChart', 'pie', mostVisitedLotsChartData, mostVisitedLotsChartOptions);
+
     });
 </script>
-{% endblock %} 
+{% endblock %}
