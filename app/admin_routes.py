@@ -83,54 +83,46 @@ def edit_parking_lot(lot_id):
         original_capacity = lot.maximum_capacity
         new_capacity = form.maximum_capacity.data
 
+        # Prevent increasing maximum_capacity
+        if new_capacity > original_capacity:
+            flash(f'Cannot increase the maximum capacity of parking lot \'{lot.name}\'. Physical expansion is not supported via this interface.', 'danger')
+            # Redirect back to the edit page with the current lot_id
+            return redirect(url_for('admin_routes.edit_parking_lot', lot_id=lot.id))
+
+        # Update other fields first
         lot.name = form.name.data
         lot.address = form.address.data
         lot.pin_code = form.pin_code.data
         lot.price_per_hour = form.price_per_hour.data
-        # Update capacity last, after spot adjustments if necessary
 
-        if new_capacity > original_capacity:
-            spots_to_add = new_capacity - original_capacity
-            existing_spot_numbers = {spot.spot_number for spot in lot.spots.all()}
-            
-            candidate_suffix = 1
-            spots_added_count = 0
-            
-            while spots_added_count < spots_to_add:
-                prospective_spot_number = f"S{candidate_suffix:03d}"
-                if prospective_spot_number not in existing_spot_numbers:
-                    spot = ParkingSpot(spot_number=prospective_spot_number, parking_lot=lot, status='A')
-                    db.session.add(spot)
-                    existing_spot_numbers.add(prospective_spot_number) # Add to set to prevent re-adding in same transaction
-                    spots_added_count += 1
-                candidate_suffix += 1
-                if candidate_suffix > 999 and spots_added_count < spots_to_add: # Safety break for S000-S999 format
-                    flash('Could not generate enough unique spot numbers. Please check existing spots or capacity.','danger')
-                    db.session.rollback() # Rollback spots added in this attempt
-                    return render_template('admin/create_edit_parking_lot.html', form=form, title='Edit Parking Lot', legend=f'Edit {lot.name}', lot=lot, ParkingSpot=ParkingSpot)
-
-        elif new_capacity < original_capacity:
+        # Logic for decreasing capacity
+        if new_capacity < original_capacity:
             spots_to_remove_count = original_capacity - new_capacity
-            # Prioritize removing spots that are available and have no reservations
-            # For simplicity, we are removing available spots from highest number downwards as before.
-            # A more complex version might allow choosing which spots to remove.
-            available_spots_to_remove = lot.spots.filter_by(status='A').order_by(ParkingSpot.spot_number.desc()).limit(spots_to_remove_count).all()
             
-            if len(available_spots_to_remove) < spots_to_remove_count:
-                flash(f'Cannot reduce capacity by {spots_to_remove_count}. Only {len(available_spots_to_remove)} available spots can be removed. Please ensure spots are free or release them manually.', 'danger')
-                # No rollback needed here as we haven't made changes yet for this path
+            # Get all available spots and filter out any with active reservations
+            all_available_spots_query = lot.spots.filter_by(status='A').order_by(ParkingSpot.spot_number.desc())
+            truly_available_spots = []
+            for spot_candidate in all_available_spots_query:
+                if not spot_candidate.get_active_reservation():
+                    truly_available_spots.append(spot_candidate)
+                # Optimization: if we have enough spots, break early
+                if len(truly_available_spots) >= spots_to_remove_count:
+                    break
+
+            if len(truly_available_spots) < spots_to_remove_count:
+                flash(f'Cannot reduce capacity by {spots_to_remove_count} spots. Only {len(truly_available_spots)} truly available spots can be removed. Please ensure spots are free and have no active reservations.', 'danger')
+                db.session.rollback() # Rollback any changes made before this point if needed
                 return redirect(url_for('admin_routes.edit_parking_lot', lot_id=lot.id))
             else:
-                for spot_to_remove in available_spots_to_remove:
-                    # Double check no active reservations, though status 'A' should mean none.
-                    # This is more critical if allowing deletion of specific spots by admin in future.
-                    if spot_to_remove.get_active_reservation():
-                        flash(f'Cannot remove spot {spot_to_remove.spot_number} as it has an active reservation, despite being marked Available. Please resolve.', 'danger')
-                        return redirect(url_for('admin_routes.edit_parking_lot', lot_id=lot.id))
+                # Remove the required number of truly available spots
+                for i in range(spots_to_remove_count):
+                    spot_to_remove = truly_available_spots[i]
                     db.session.delete(spot_to_remove)
                 flash(f'Reduced capacity. {spots_to_remove_count} spots removed.', 'info')
         
-        lot.maximum_capacity = new_capacity # Set the new capacity on the lot model
+        # Set the new capacity on the lot model after all spot adjustments
+        # This will be the new_capacity from the form, which is <= original_capacity
+        lot.maximum_capacity = new_capacity 
         db.session.commit()
         flash(f'Parking lot \'{lot.name}\' updated successfully!', 'success')
         return redirect(url_for('admin_routes.list_parking_lots'))
@@ -148,6 +140,14 @@ def delete_parking_lot(lot_id):
         flash(f'Cannot delete parking lot \'{lot.name}\'. It has occupied spots.', 'danger')
         return redirect(url_for('admin_routes.list_parking_lots'))
     
+    # Check for any active reservations, even if status is 'A' (defensive check)
+    # This loop is necessary as a simple filter_by(leaving_timestamp=None) on the relationship
+    # might not be directly available for all spots in a lot without iterating.
+    for spot in lot.spots.all():
+        if spot.get_active_reservation():
+            flash(f'Cannot delete parking lot \'{lot.name}\'. Spot {spot.spot_number} has an active reservation.', 'danger')
+            return redirect(url_for('admin_routes.list_parking_lots'))
+
     # Cascading delete should handle spots due to relationship setting
     lot_name = lot.name
     db.session.delete(lot)
@@ -212,4 +212,4 @@ def list_users():
     users = User.query.filter_by(is_admin=False).order_by(User.username).all()
     return render_template('admin/list_users.html', users=users, title='Registered Users')
 
-# Add routes for summary charts later 
+# Add routes for summary charts --?PENDING,NEED TO DO
