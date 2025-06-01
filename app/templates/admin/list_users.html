@@ -9,13 +9,14 @@
 
 {% if users %}
 <div class="table-responsive">
-    <table class="table table-striped table-hover">
+    <table class="table table-striped table-hover align-middle">
         <thead>
             <tr>
                 <th>ID</th>
                 <th>Username</th>
+                <th>Full Name</th> 
                 <th>Email</th>
-                <th>Reservations Made</th> {# Placeholder for a count #}
+                <th>Reservations Made</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -23,11 +24,11 @@
             {% for user_item in users %}
             <tr>
                 <td>{{ user_item.id }}</td>
-                <td>{{ user_item.username }}</td>
+                <td><a href="{{ url_for('admin_routes.user_details', user_id=user_item.id) }}">{{ user_item.username }}</a></td>
+                <td>{{ user_item.full_name if user_item.full_name else 'N/A' }}</td> {# NEW FIELD #}
                 <td>{{ user_item.email }}</td>
                 <td>{{ user_item.reservations.count() }}</td>
                 <td>
-                    {# UPDATED LINK #}
                     <a href="{{ url_for('admin_routes.user_details', user_id=user_item.id) }}" class="btn btn-sm btn-outline-info">View Details</a> 
                     {# Add other actions like disable user if needed #}
                 </td>
@@ -38,6 +39,7 @@
 </div>
 {% else %}
 <div class="alert alert-info" role="alert">
+    {# Adjust colspan to 6 (ID, Username, Full Name, Email, Reservations Made, Actions) #}
     No registered users found (excluding admin).
 </div>
 {% endif %}

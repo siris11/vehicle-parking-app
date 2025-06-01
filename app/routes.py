@@ -13,7 +13,6 @@ def index():
             return redirect(url_for('user_routes.dashboard'))
     return render_template('index.html', title='Welcome')
 
-# Example of how user dashboard route might look (to be moved to user_routes.py)
 # @bp.route('/dashboard')
 # @login_required
 # def user_dashboard():

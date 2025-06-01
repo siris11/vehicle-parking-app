@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="mb-0">Welcome, {{ current_user.username }}!</h1>
+        <h1 class="mb-0">Welcome, {{ current_user.full_name if current_user.full_name else current_user.username }}!</h1> 
         <a href="{{ url_for('user_routes.edit_profile') }}" class="btn btn-outline-primary">Edit Profile</a>
     </div>
 
@@ -20,22 +20,24 @@
         {% endif %}
     {% endwith %}
 
-    {# 1. Recent Parking History (Remains at the top) #}
-    <div class="card mb-4">
-        <div class="card-header">
-            <h4 class="mb-0">Recent Parking History</h4>
+    {# 1. User's Current & Recent Reservations #}
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Your Parking Reservations</h4>
         </div>
         <div class="card-body">
             {% if user_reservations_table %}
                 <div class="table-responsive">
-                    <table class="table table-hover table-sm mb-0">
+                    <table class="table table-hover table-sm mb-0 align-middle">
                         <thead>
                             <tr>
                                 <th>Lot Name</th>
                                 <th>Spot</th>
                                 <th>Vehicle No.</th>
-                                <th>Parked At</th>
+                                <th>Booked At</th> {# Changed from Parked At #}
+                                <th>Parking Time</th>
                                 <th>Status</th>
+                                <th>Cost</th> 
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -45,19 +47,43 @@
                                     <td>{{ res.parking_spot.parking_lot.name }}</td>
                                     <td>{{ res.parking_spot.spot_number }}</td>
                                     <td>{{ res.vehicle_number if res.vehicle_number else 'N/A'}}</td>
-                                    <td>{{ res.parking_timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>{{ res.booking_timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
                                     <td>
-                                        {% if res.leaving_timestamp %}
-                                            <span class="badge bg-secondary">Completed</span>
-                                        {% else %}
+                                        {% if res.parking_timestamp %}{{ res.parking_timestamp.strftime('%Y-%m-%d %H:%M') }}{% else %}-{% endif %}
+                                    </td>
+                                    <td>
+                                        {% if res.status == 'active' %}
                                             <span class="badge bg-success">Active</span>
+                                        {% elif res.status == 'pending' %}
+                                            <span class="badge bg-info">Pending</span>
+                                        {% elif res.status == 'completed' %}
+                                            <span class="badge bg-secondary">Completed</span>
+                                        {% elif res.status == 'cancelled' %}
+                                            <span class="badge bg-danger">Cancelled</span>
+                                        {% else %}
+                                            <span class="badge bg-light text-dark">{{ res.status }}</span>
                                         {% endif %}
                                     </td>
                                     <td>
-                                        {% if not res.leaving_timestamp %}
-                                            <a href="{{ url_for('user_routes.release_spot_page', reservation_id=res.id) }}" class="btn btn-warning btn-sm">Release</a>
+                                        {% if res.total_cost is not none %}
+                                            ₹{{ "%.2f"|format(res.total_cost) }}
                                         {% else %}
                                             -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {# Conditional Actions based on status #}
+                                        {% if res.status == 'pending' %}
+                                            <form action="{{ url_for('user_routes.check_in_reservation', reservation_id=res.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Confirm check-in for this reservation?');">
+                                                <button type="submit" class="btn btn-sm btn-success me-1">Check In</button>
+                                            </form>
+                                            <form action="{{ url_for('user_routes.cancel_reservation', reservation_id=res.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this reservation?');">
+                                                <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
+                                            </form>
+                                        {% elif res.status == 'active' %}
+                                            <a href="{{ url_for('user_routes.park_out_page', reservation_id=res.id) }}" class="btn btn-sm btn-warning">Park Out</a>
+                                        {% else %}
+                                            - {# No actions for completed or cancelled reservations #}
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -66,14 +92,14 @@
                     </table>
                 </div>
             {% else %}
-                <p class="mb-0">You have no recent parking history.</p>
+                <p class="mb-0 text-muted">You have no active, pending, or recent parking reservations.</p>
             {% endif %}
         </div>
     </div>
 
-    {# 2. Search Parking Lots and Available Parking Lots (Moved up to second position) #}
-    <div class="card mb-4">
-        <div class="card-header">
+    {# 2. Search Parking Lots #}
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
             <h4 class="mb-0">Search Parking Lots</h4>
         </div>
         <div class="card-body">
@@ -92,32 +118,38 @@
         </div>
     </div>
 
-    <div class="card mb-4"> {# Moved to be directly after search form #}
-        <div class="card-header">
-               <h4 class="mb-0">{{ 'Search Results' if search_term else 'Available Parking Lots' }}</h4>
+    {# Available Parking Lots (Display Search Results or All) #}
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">{{ 'Search Results' if search_term else 'Available Parking Lots' }}</h4>
         </div>
         <div class="card-body">
             {% if parking_lots %}
                 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
                     {% for lot in parking_lots %}
                         <div class="col">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ lot.name }}</h5>
-                                    <p class="card-text">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title text-primary">{{ lot.name }}</h5>
+                                    <p class="card-text flex-grow-1">
                                         <strong>Location:</strong> {{ lot.address if lot.address else 'N/A' }}<br>
                                         <strong>Pin Code:</strong> {{ lot.pin_code if lot.pin_code else 'N/A' }}<br>
-                                        <strong>Available Spots:</strong> {{ lot.spots.filter_by(status='A').count() }}/{{ lot.maximum_capacity }}<br>
+                                        {# <strong>Total Spots:</strong> {{ lot.maximum_capacity }}<br> #}
+                                       {# <strong>Available:</strong> <span class="badge bg-success">{{ lot.spots.filter_by(status='Available').count() }}</span><br> #}
+                                        {# <strong>Reserved:</strong> <span class="badge bg-info">{{ lot.spots.filter_by(status='Reserved').count() }}</span><br> #}
+                                       {# <strong>Occupied:</strong> <span class="badge bg-danger">{{ lot.spots.filter_by(status='Occupied').count() }}</span><br> #}
                                         <strong>Price:</strong> ₹{{ "%.2f"|format(lot.price_per_hour) }}/hour
                                     </p>
-                                    <a href="{{ url_for('user_routes.book_spot', lot_id=lot.id) }}"
-                                       class="btn btn-primary"
-                                       {% if lot.spots.filter_by(status='A').count() == 0 %}disabled{% endif %}>
-                                       {% if lot.spots.filter_by(status='A').count() == 0 %}No Spots Available{% else %}Book a Spot in This Lot{% endif %}
-                                    </a>
-                                    <a href="{{ url_for('user_routes.view_lot_spots', lot_id=lot.id) }}" class="btn btn-outline-secondary mt-2">View Lot Details</a>
+                                    <div class="mt-auto"> {# Pushes buttons to the bottom #}
+                                        <a href="{{ url_for('user_routes.book_spot', lot_id=lot.id) }}"
+                                            class="btn btn-primary w-100 mb-2"
+                                            {% if lot.spots.filter_by(status='Available').count() == 0 %}disabled{% endif %}> {# Disabled if no available spots #}
+                                            {% if lot.spots.filter_by(status='Available').count() == 0 %}No Spots Available{% else %}Book a Spot in This Lot{% endif %}
+                                        </a>
+                                        {#<a href="{{ url_for('user_routes.view_lot_spots', lot_id=lot.id) }}" class="btn btn-outline-secondary w-100">View Lot Details</a>#}
+                                    </div>
                                 </div>
-                                <div class="card-footer">
+                                <div class="card-footer bg-light">
                                     <small class="text-muted">Lot ID: {{ lot.id }}</small>
                                 </div>
                             </div>
@@ -136,13 +168,13 @@
         </div>
     </div>
 
-    {# 3. Charts/Summaries (Moved to third position) #}
+    {# 3. Charts/Summaries #}
     <div class="row">
         {# Parking Cost Chart #}
         <div class="col-md-6 mb-4">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
-                    <h5 class="card-title text-center">Parking Cost Trends</h5>
+                    <h5 class="card-title text-center text-primary">Parking Cost Trends</h5>
                     <canvas id="parkingCostChart" style="max-height: 300px;"></canvas>
                     <p class="text-muted small text-center mt-2">Shows your parking expenses over time.</p>
                 </div>
@@ -153,7 +185,7 @@
         <div class="col-md-6 mb-4">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
-                    <h5 class="card-title text-center">Parking Frequency</h5>
+                    <h5 class="card-title text-center text-primary">Parking Frequency</h5>
                     <canvas id="parkingFrequencyChart" style="max-height: 300px;"></canvas>
                     <p class="text-muted small text-center mt-2">Tracks how often you park over the last 7 days.</p>
                 </div>
@@ -164,7 +196,7 @@
         <div class="col-md-12 mb-4">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
-                    <h5 class="card-title text-center">Most Visited Parking Lots</h5>
+                    <h5 class="card-title text-center text-primary">Most Visited Parking Lots</h5>
                     <canvas id="mostVisitedLotsChart" style="max-height: 400px;"></canvas>
                     <p class="text-muted small text-center mt-2">Your top parking destinations (based on last 10 completed parkings).</p>
                 </div>
@@ -184,7 +216,8 @@
         // Helper function to safely get data and initialize chart
         function createChart(chartId, type, data, options) {
             const ctx = document.getElementById(chartId);
-            if (ctx && data && data.labels && data.labels.length > 0) { // Check for labels length as well
+            // Check if ctx exists AND if data has labels AND if labels array is not empty
+            if (ctx && data && data.labels && data.labels.length > 0) {
                 new Chart(ctx, {
                     type: type,
                     data: data,
@@ -205,6 +238,7 @@
         }
 
         // 1. Parking Cost Chart Data & Options
+        // Ensure that `parking_cost_chart_data` is passed from your Flask route
         const parkingCostRawData = {{ parking_cost_chart_data|tojson }} || [];
         const parkingCostChartData = {
             labels: parkingCostRawData.map(row => row[0]),
@@ -255,6 +289,7 @@
 
 
         // 2. Parking Frequency Chart Data & Options
+        // Ensure that `parking_frequency_data` is passed from your Flask route
         const parkingFrequencyRawData = {{ parking_frequency_data|tojson }} || [];
         const parkingFrequencyChartData = {
             labels: parkingFrequencyRawData.map(row => row[0]),
@@ -289,6 +324,7 @@
 
 
         // 3. Most Visited Lots Chart Data & Options
+        // Ensure that `most_visited_lots_data` is passed from your Flask route
         const mostVisitedLotsRawData = {{ most_visited_lots_data|tojson }} || [];
         const mostVisitedLotsChartData = {
             labels: mostVisitedLotsRawData.map(row => row[0]),

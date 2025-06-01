@@ -1,10 +1,11 @@
+{# app/templates/index.html #}
 {% extends "base.html" %}
 
-{% block title %}Welcome - Vehicle Parking App{% endblock %}
+{% block title %}Welcome - ParkNxt{% endblock %}
 
 {% block content %}
 <div class="px-4 py-5 my-5 text-center">
-    <img class="d-block mx-auto mb-4" src="{{ url_for('static', filename='images/parking_logo.png') }}" alt="" width="120" height="120"> 
+    <img class="d-block mx-auto mb-4" src="{{ url_for('static', filename='images/parking_logo.png') }}" alt="ParkNxt Logo" width="120" height="120">
     <h1 class="display-5 fw-bold">Vehicle Parking Management</h1>
     <div class="col-lg-6 mx-auto">
         <p class="lead mb-4">Quickly and easily manage your parking lots, book spots, and view availability. Login or register to continue.</p>
@@ -13,9 +14,10 @@
                 <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg px-4 gap-3">Login</a>
                 <a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary btn-lg px-4">Register</a>
             {% elif current_user.is_admin %}
-                 <a href="{{ url_for('admin_routes.dashboard') }}" class="btn btn-success btn-lg px-4">Go to Admin Dashboard</a>
+                <a href="{{ url_for('admin_routes.dashboard') }}" class="btn btn-success btn-lg px-4">Go to Admin Dashboard</a>
             {% else %}
-                 <a href="#" class="btn btn-success btn-lg px-4">Go to User Dashboard</a> {# Placeholder for user_routes.dashboard #}
+                {# Corrected link for User Dashboard #}
+                <a href="{{ url_for('user_routes.dashboard') }}" class="btn btn-success btn-lg px-4">Go to User Dashboard</a>
             {% endif %}
         </div>
     </div>
@@ -26,28 +28,25 @@
     <div class="row g-4 py-5 row-cols-1 row-cols-lg-3">
       <div class="feature col">
         <div class="feature-icon d-inline-flex align-items-center justify-content-center text-bg-primary bg-gradient fs-2 mb-3">
-          {# <svg class="bi" width="1em" height="1em"><use xlink:href="#collection"/></svg> #}
-          <i class="bi bi-p-circle-fill p-3"></i> {# Example icon, include Bootstrap Icons or FontAwesome #}
+          <i class="bi bi-p-circle-fill p-3"></i> 
         </div>
         <h3 class="fs-2 text-body-emphasis">Admin Management</h3>
         <p>Admins can create, edit, and delete parking lots, manage capacities, and view overall parking status and user activity.</p>
       </div>
       <div class="feature col">
         <div class="feature-icon d-inline-flex align-items-center justify-content-center text-bg-primary bg-gradient fs-2 mb-3">
-          {# <svg class="bi" width="1em" height="1em"><use xlink:href="#people-circle"/></svg> #}
-           <i class="bi bi-person-check-fill p-3"></i>
+            <i class="bi bi-person-check-fill p-3"></i> 
         </div>
         <h3 class="fs-2 text-body-emphasis">User Bookings</h3>
         <p>Registered users can easily find available parking lots, book a spot, and manage their active reservations.</p>
       </div>
       <div class="feature col">
         <div class="feature-icon d-inline-flex align-items-center justify-content-center text-bg-primary bg-gradient fs-2 mb-3">
-          {# <svg class="bi" width="1em" height="1em"><use xlink:href="#toggles2"/></svg> #}
-          <i class="bi bi-bar-chart-line-fill p-3"></i>
+          <i class="bi bi-bar-chart-line-fill p-3"></i> 
         </div>
         <h3 class="fs-2 text-body-emphasis">Real-time Status & Charts</h3>
         <p>View real-time availability of parking spots and insightful charts for both admins and users.</p>
       </div>
     </div>
-  </div>
-{% endblock %} 
+</div>
+{% endblock %}

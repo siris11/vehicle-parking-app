@@ -2,7 +2,8 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import current_user, login_required
 from functools import wraps
 from .forms import ParkingLotForm
-from .models import ParkingLot, ParkingSpot, User, Reservation
+# Ensure Reservation is imported here
+from .models import ParkingLot, ParkingSpot, User, Reservation 
 from . import db
 
 bp = Blueprint('admin_routes', __name__)
@@ -24,18 +25,24 @@ def dashboard():
     lots = ParkingLot.query.order_by(ParkingLot.name).all()
     
     total_spots = int(ParkingSpot.query.count() or 0)
-    occupied_spots_overall = int(ParkingSpot.query.filter_by(status='O').count() or 0)
-    available_spots_overall = total_spots - occupied_spots_overall
+    # Count spots with 'Occupied' status
+    occupied_spots_overall = int(ParkingSpot.query.filter_by(status='Occupied').count() or 0)
+    # Count spots with 'Reserved' status
+    reserved_spots_overall = int(ParkingSpot.query.filter_by(status='Reserved').count() or 0)
+    # Calculate available spots by subtracting both occupied and reserved
+    available_spots_overall = total_spots - occupied_spots_overall - reserved_spots_overall
+    
     registered_users = int(User.query.filter_by(is_admin=False).count() or 0)
 
     current_lots = lots if lots else []
 
     return render_template('admin/dashboard.html', title='Admin Dashboard',
-                           lots=current_lots,
-                           total_spots=total_spots,
-                           occupied_spots=occupied_spots_overall,
-                           available_spots=available_spots_overall,
-                           registered_users=registered_users)
+                            lots=current_lots,
+                            total_spots=total_spots,
+                            occupied_spots=occupied_spots_overall,
+                            reserved_spots=reserved_spots_overall, 
+                            available_spots=available_spots_overall,
+                            registered_users=registered_users)
 
 @bp.route('/parking_lots')
 @login_required
@@ -62,14 +69,15 @@ def create_parking_lot():
 
         # Create parking spots for the lot
         for i in range(1, form.maximum_capacity.data + 1):
-            spot_number = f"S{i:03d}" # Example: S001, S002
-            spot = ParkingSpot(spot_number=spot_number, lot_id=new_lot.id, status='A')
+            spot_number = f"S{i:03d}" 
+            # Default status to 'Available' 
+            spot = ParkingSpot(spot_number=spot_number, lot_id=new_lot.id, status='Available')
             db.session.add(spot)
         
         db.session.commit()
         flash(f'Parking lot \'{new_lot.name}\' created successfully with {new_lot.maximum_capacity} spots!', 'success')
         return redirect(url_for('admin_routes.list_parking_lots'))
-    return render_template('admin/create_edit_parking_lot.html', form=form, title='Create Parking Lot', legend='New Parking Lot', ParkingSpot=ParkingSpot)
+    return render_template('admin/create_edit_parking_lot.html', form=form, title='Create Parking Lot', legend='New Parking Lot') 
 
 @bp.route('/parking_lot/edit/<int:lot_id>', methods=['GET', 'POST'])
 @login_required
@@ -86,7 +94,6 @@ def edit_parking_lot(lot_id):
         # Prevent increasing maximum_capacity
         if new_capacity > original_capacity:
             flash(f'Cannot increase the maximum capacity of parking lot \'{lot.name}\'. Physical expansion is not supported via this interface.', 'danger')
-            # Redirect back to the edit page with the current lot_id
             return redirect(url_for('admin_routes.edit_parking_lot', lot_id=lot.id))
 
         # Update other fields first
@@ -99,56 +106,70 @@ def edit_parking_lot(lot_id):
         if new_capacity < original_capacity:
             spots_to_remove_count = original_capacity - new_capacity
             
-            # Get all available spots and filter out any with active reservations
-            all_available_spots_query = lot.spots.filter_by(status='A').order_by(ParkingSpot.spot_number.desc())
+            # Filter for 'Available' spots and ensure no active/pending reservations
+            # We need to explicitly check the Reservation model's status
+            truly_available_spots_query = ParkingSpot.query.filter(
+                ParkingSpot.lot_id == lot.id,
+                ParkingSpot.status == 'Available'
+            ).order_by(ParkingSpot.spot_number.desc())
+
             truly_available_spots = []
-            for spot_candidate in all_available_spots_query:
-                if not spot_candidate.get_active_reservation():
+            for spot_candidate in truly_available_spots_query:
+                # Check if there's any active or pending reservation for this spot
+                active_or_pending_reservation = Reservation.query.filter(
+                    Reservation.spot_id == spot_candidate.id,
+                    Reservation.status.in_(['pending', 'active'])
+                ).first()
+                if not active_or_pending_reservation:
                     truly_available_spots.append(spot_candidate)
-                # Optimization: if we have enough spots, break early
+                
                 if len(truly_available_spots) >= spots_to_remove_count:
                     break
 
             if len(truly_available_spots) < spots_to_remove_count:
-                flash(f'Cannot reduce capacity by {spots_to_remove_count} spots. Only {len(truly_available_spots)} truly available spots can be removed. Please ensure spots are free and have no active reservations.', 'danger')
-                db.session.rollback() # Rollback any changes made before this point if needed
+                flash(f'Cannot reduce capacity by {spots_to_remove_count} spots. Only {len(truly_available_spots)} truly available spots can be removed. Please ensure spots are free and have no active or pending reservations.', 'danger')
+                db.session.rollback()
                 return redirect(url_for('admin_routes.edit_parking_lot', lot_id=lot.id))
             else:
-                # Remove the required number of truly available spots
                 for i in range(spots_to_remove_count):
                     spot_to_remove = truly_available_spots[i]
                     db.session.delete(spot_to_remove)
                 flash(f'Reduced capacity. {spots_to_remove_count} spots removed.', 'info')
         
-        # Set the new capacity on the lot model after all spot adjustments
-        # This will be the new_capacity from the form, which is <= original_capacity
         lot.maximum_capacity = new_capacity 
         db.session.commit()
         flash(f'Parking lot \'{lot.name}\' updated successfully!', 'success')
         return redirect(url_for('admin_routes.list_parking_lots'))
     
-    return render_template('admin/create_edit_parking_lot.html', form=form, title='Edit Parking Lot', legend=f'Edit {lot.name}', lot=lot, ParkingSpot=ParkingSpot)
+    return render_template('admin/create_edit_parking_lot.html', form=form, title='Edit Parking Lot', legend=f'Edit {lot.name}', lot=lot) 
 
 @bp.route('/parking_lot/delete/<int:lot_id>', methods=['POST'])
 @login_required
 @admin_required
 def delete_parking_lot(lot_id):
     lot = ParkingLot.query.get_or_404(lot_id)
-    # Check if all spots in the parking lot are empty (no active reservations)
-    occupied_spots = lot.spots.filter_by(status='O').count()
-    if occupied_spots > 0:
-        flash(f'Cannot delete parking lot \'{lot.name}\'. It has occupied spots.', 'danger')
+    
+    # Check for 'Occupied' or 'Reserved' spots
+    occupied_or_reserved_spots = ParkingSpot.query.filter(
+        ParkingSpot.lot_id == lot.id,
+        ParkingSpot.status.in_(['Occupied', 'Reserved'])
+    ).count()
+
+    if occupied_or_reserved_spots > 0:
+        flash(f'Cannot delete parking lot \'{lot.name}\'. It has occupied or reserved spots.', 'danger')
         return redirect(url_for('admin_routes.list_parking_lots'))
     
-    # Check for any active reservations, even if status is 'A' (defensive check)
-    # This loop is necessary as a simple filter_by(leaving_timestamp=None) on the relationship
-    # might not be directly available for all spots in a lot without iterating.
-    for spot in lot.spots.all():
-        if spot.get_active_reservation():
-            flash(f'Cannot delete parking lot \'{lot.name}\'. Spot {spot.spot_number} has an active reservation.', 'danger')
-            return redirect(url_for('admin_routes.list_parking_lots'))
+    # Also double-check for any active/pending reservations, even if spot status is 'Available'
+    # This is a more robust check directly on the Reservation model
+    active_or_pending_reservations_in_lot = Reservation.query.join(ParkingSpot).filter(
+        ParkingSpot.lot_id == lot.id,
+        Reservation.status.in_(['pending', 'active'])
+    ).count()
 
-    # Cascading delete should handle spots due to relationship setting
+    if active_or_pending_reservations_in_lot > 0:
+        flash(f'Cannot delete parking lot \'{lot.name}\'. It has active or pending reservations.', 'danger')
+        return redirect(url_for('admin_routes.list_parking_lots'))
+
     lot_name = lot.name
     db.session.delete(lot)
     db.session.commit()
@@ -161,7 +182,8 @@ def delete_parking_lot(lot_id):
 def view_lot_spots(lot_id):
     lot = ParkingLot.query.get_or_404(lot_id)
     spots = lot.spots.order_by(ParkingSpot.spot_number).all()
-    return render_template('admin/view_lot_spots.html', lot=lot, spots=spots, title=f'Spots in {lot.name}')
+    # Pass the Reservation model to the template
+    return render_template('admin/view_lot_spots.html', lot=lot, spots=spots, title=f'Spots in {lot.name}', Reservation=Reservation)
 
 
 @bp.route('/view_spot_details/<int:spot_id>')
@@ -169,34 +191,36 @@ def view_lot_spots(lot_id):
 @admin_required
 def view_spot_details(spot_id):
     spot = ParkingSpot.query.get_or_404(spot_id)
-    reservation = None
-    if spot.status == 'O':
-        # Find the current reservation for this spot
-        reservation = Reservation.query.filter_by(spot_id=spot.id, leaving_timestamp=None).first()
-    return render_template('admin/view_spot_details.html', spot=spot, reservation=reservation, title=f'Details for Spot {spot.spot_number}', Reservation=Reservation)
+    reservation = Reservation.query.filter_by(
+        spot_id=spot.id,
+        status='active' 
+    ).first()
 
+    # Pass the Reservation model class to the template
+    return render_template('admin/view_spot_details.html', spot=spot, reservation=reservation, title=f'Details for Spot {spot.spot_number}', Reservation=Reservation) 
 
 @bp.route('/spot/delete/<int:spot_id>', methods=['POST'])
 @login_required
 @admin_required
 def delete_spot(spot_id):
     spot = ParkingSpot.query.get_or_404(spot_id)
-    lot = spot.parking_lot # Get the parent lot
+    lot = spot.parking_lot 
 
-    if spot.status == 'O':
-        flash(f'Spot {spot.spot_number} in lot {lot.name} is occupied and cannot be deleted.', 'danger')
+    if spot.status in ['Occupied', 'Reserved']:
+        flash(f'Spot {spot.spot_number} in lot {lot.name} is {spot.status.lower()} and cannot be deleted.', 'danger')
         return redirect(url_for('admin_routes.view_lot_spots', lot_id=lot.id))
 
-    # Check for active reservations just in case, though status 'A' should mean none
-    active_reservation = Reservation.query.filter_by(spot_id=spot.id, leaving_timestamp=None).first()
-    if active_reservation:
-        flash(f'Spot {spot.spot_number} in lot {lot.name} has an active reservation and cannot be deleted.', 'danger')
+    active_or_pending_reservation = Reservation.query.filter(
+        Reservation.spot_id == spot.id,
+        Reservation.status.in_(['active', 'pending'])
+    ).first()
+    if active_or_pending_reservation:
+        flash(f'Spot {spot.spot_number} in lot {lot.name} has an active or pending reservation and cannot be deleted.', 'danger')
         return redirect(url_for('admin_routes.view_lot_spots', lot_id=lot.id))
 
     spot_number_deleted = spot.spot_number
     db.session.delete(spot)
     
-    # Decrement capacity of the parent lot
     if lot.maximum_capacity > 0:
         lot.maximum_capacity -= 1
     
@@ -213,18 +237,14 @@ def list_users():
     return render_template('admin/list_users.html', users=users, title='Registered Users')
 
 
-# NEW ROUTE: User Details for Admin
 @bp.route('/user_details/<int:user_id>')
 @login_required
 @admin_required
 def user_details(user_id):
     user = User.query.get_or_404(user_id)
-    # Fetch all reservations for this user, ordered by most recent first
-    reservations = user.reservations.order_by(Reservation.parking_timestamp.desc()).all()
+    reservations = user.reservations.order_by(Reservation.booking_timestamp.desc()).all()
     
     return render_template('admin/user_details.html', 
-                           user=user, 
-                           reservations=reservations, 
-                           title=f'Details for {user.username}')
-
-# Add routes for summary charts --?PENDING,NEED TO DO
+                            user=user, 
+                            reservations=reservations, 
+                            title=f'Details for {user.full_name}')

@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, IntegerField, FloatField, TextAreaField, SelectField
 from wtforms.validators import DataRequired, Email, EqualTo, ValidationError, NumberRange, Length
+from flask_login import current_user
 from .models import User, ParkingLot
 
 class LoginForm(FlaskForm):
@@ -11,6 +12,7 @@ class LoginForm(FlaskForm):
 
 class RegistrationForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=3, max=64)])
+    full_name = StringField('Full Name', validators=[DataRequired(), Length(max=120)])
     email = StringField('Email', validators=[DataRequired(), Email(), Length(max=120)])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
     password2 = PasswordField(
@@ -20,12 +22,12 @@ class RegistrationForm(FlaskForm):
     def validate_username(self, username):
         user = User.query.filter_by(username=username.data).first()
         if user is not None:
-            raise ValidationError('Please use a different username.')
+            raise ValidationError('Username is not available. Please use a different username.')
 
     def validate_email(self, email):
         user = User.query.filter_by(email=email.data).first()
         if user is not None:
-            raise ValidationError('Please use a different email address.')
+            raise ValidationError('Email is already registered. Please use a different email address.')
 
 class ParkingLotForm(FlaskForm):
     name = StringField('Parking Lot Name', validators=[DataRequired(), Length(max=128)])
@@ -36,23 +38,28 @@ class ParkingLotForm(FlaskForm):
     submit = SubmitField('Save Parking Lot')
 
     def validate_name(self, name):
-        # Check if the name is being changed during an edit
+        # Checking if the name is being changed during an edit
+        # The logic for _original_name should be set in the route when editing
         if hasattr(self, '_original_name') and self._original_name == name.data:
-            return # Name hasn't changed, so no validation needed against existing names
+            return 
         lot = ParkingLot.query.filter_by(name=name.data).first()
         if lot:
             raise ValidationError('A parking lot with this name already exists.')
 
 class BookSpotForm(FlaskForm):
     vehicle_number = StringField('Vehicle Number', validators=[DataRequired(), Length(min=3, max=20)])
-    # spot_id will be passed via URL, user_id from current_user
     submit = SubmitField('Confirm Booking')
 
-class ReleaseSpotForm(FlaskForm):
-    reservation_id = IntegerField('Reservation ID', validators=[DataRequired()]) # Hidden field, perhaps
-    submit = SubmitField('Release Parking Spot')
+# For the user to confirm they've arrived and parked
+class CheckInForm(FlaskForm):
+    submit = SubmitField('Check In Now')
+
+# ParkOutForm
+class ParkOutForm(FlaskForm):
+    submit = SubmitField('Park Out & End Session') 
 
 class EditProfileForm(FlaskForm):
+    full_name = StringField('Full Name', validators=[DataRequired(), Length(max=120)]) 
     username = StringField('Username', validators=[DataRequired(), Length(min=3, max=64)])
     email = StringField('Email', validators=[DataRequired(), Email(), Length(max=120)])
     submit = SubmitField('Update Profile')
@@ -74,4 +81,17 @@ class EditProfileForm(FlaskForm):
             if user:
                 raise ValidationError('This email address is already registered. Please choose a different one.')
 
-# More forms can be added here as needed, e.g., for editing user profiles, etc. 
+# NEW FORM: For changing user's password
+class ChangePasswordForm(FlaskForm):
+    current_password = PasswordField('Current Password', validators=[DataRequired()])
+    new_password = PasswordField('New Password', validators=[DataRequired(), Length(min=6)])
+    confirm_new_password = PasswordField(
+        'Confirm New Password', validators=[DataRequired(), EqualTo('new_password')])
+    submit = SubmitField('Change Password')
+
+    def validate_current_password(self, current_password):
+        # This validation checks if the current password matches the user's stored password.
+        # It needs the User model's check_password method.
+        # current_user must be imported from flask_login
+        if not current_user.check_password(current_password.data):
+            raise ValidationError('Incorrect current password.')

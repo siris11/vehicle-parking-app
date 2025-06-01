@@ -7,22 +7,25 @@
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-8 offset-md-2 col-lg-6 offset-lg-3">
-            <h1 class="mb-4 text-center">{{ title }}</h1>
+            <h1 class="mb-4 text-center text-primary">{{ title }}</h1> 
             
-            <div class="card mb-4">
+            <div class="card mb-4 shadow-sm"> 
+                <div class="card-header bg-light"> 
+                    <h5 class="card-title mb-0 text-primary">Booking Details for Parking Lot</h5>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title">Booking Details for Parking Lot</h5>
                     <p class="card-text">
-                        <strong>Parking Lot:</strong> {{ lot.name }} ({{ lot.address }}, {{ lot.pin_code }})
+                        <strong>Parking Lot:</strong> {{ lot.name }} 
+                        ({% if lot.address %}{{ lot.address }}{% else %}N/A{% endif %}, 
+                        {% if lot.pin_code %}{{ lot.pin_code }}{% else %}N/A{% endif %})
                         <br>
-                        <strong>Price:</strong> ₹{{ lot.price_per_hour }}/hour
-                        <br>
-                        <hr> {# Add a separator #}
+                        <strong>Price:</strong> ₹{{ "%.2f"|format(lot.price_per_hour) }}/hour
+                        <hr>
                         <strong>Important:</strong> You are booking a spot within this lot.
                         <br>
-                        The system will automatically allocate the **first available spot** to your vehicle.
+                        The system will automatically allocate the spot to your vehicle based on the availability.
                         {% if allocated_spot %}
-                            <p class="mt-2 mb-0">You will be allocated to spot: <strong>{{ allocated_spot.spot_number }}</strong></p>
+                            <p class="mt-2 mb-0">You will be allocated to spot: <strong><span class="text-success">{{ allocated_spot.spot_number }}</span></strong></p> {# Added text-success #}
                             <p class="text-muted small">Please proceed if this is acceptable.</p>
                         {% else %}
                             <p class="text-danger mt-2 mb-0">No available spots found in this lot at the moment.</p>
@@ -33,9 +36,11 @@
 
             {# The form for entering vehicle number should only show if an allocated_spot was found #}
             {% if allocated_spot %}
-                <div class="card">
+                <div class="card shadow-sm"> {# Added shadow-sm #}
+                    <div class="card-header bg-light"> {# Added bg-light #}
+                        <h5 class="card-title mb-0 text-primary">Enter Your Vehicle Number to Confirm Booking</h5> {# Added text-primary #}
+                    </div>
                     <div class="card-body">
-                        <h5 class="card-title">Enter Your Vehicle Number to Confirm Booking</h5>
                         {# The form action should now point to the /lot/<int:lot_id>/book route #}
                         <form method="POST" action="{{ url_for('user_routes.book_spot', lot_id=lot.id) }}" novalidate>
                             {{ form.hidden_tag() }} 
@@ -52,10 +57,10 @@
                     </div>
                 </div>
             {% else %}
-                <div class="alert alert-danger" role="alert">
+                <div class="alert alert-danger shadow-sm" role="alert"> 
                     Cannot proceed with booking: No available spots in {{ lot.name }}.
                 </div>
-                <div class="text-center">
+                <div class="text-center mt-3"> {# Added mt-3 for spacing #}
                     <a href="{{ url_for('user_routes.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
                 </div>
             {% endif %}

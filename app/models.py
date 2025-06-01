@@ -6,10 +6,11 @@ from . import db
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True, nullable=False)
+    full_name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(120), index=True, unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
-    reservations = db.relationship('Reservation', backref='tenant', lazy='dynamic') # Changed from 'user' to 'tenant'
+    reservations = db.relationship('Reservation', backref='tenant', lazy='dynamic') 
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -34,28 +35,43 @@ class ParkingLot(db.Model):
 
 class ParkingSpot(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    spot_number = db.Column(db.String(20), nullable=False) # e.g., A01, B12
+    spot_number = db.Column(db.String(20), nullable=False)
     lot_id = db.Column(db.Integer, db.ForeignKey('parking_lot.id'), nullable=False)
-    status = db.Column(db.String(1), default='A', nullable=False)  # O=Occupied, A=Available
-    reservations = db.relationship('Reservation', backref='parking_spot', lazy='dynamic')
+    status = db.Column(db.String(20), default='Available', nullable=False) # 'Available', 'Reserved', 'Occupied'
+    spot_reservations = db.relationship('Reservation', backref='parking_spot', lazy='dynamic')
 
     __table_args__ = (db.UniqueConstraint('lot_id', 'spot_number', name='_lot_spot_uc'),)
 
+    # This method might need to be updated to check Reservation.status == 'active'
     def get_active_reservation(self):
         """Returns the active reservation for this spot, if any."""
-        return self.reservations.filter_by(leaving_timestamp=None).first()
+        # An active reservation is one where status is 'active' (car is parked)
+        return self.spot_reservations.filter_by(status='active').first()
 
     def __repr__(self):
-        return f'<ParkingSpot {self.spot_number} in Lot {self.lot_id}>'
+        return f'<ParkingSpot {self.spot_number} in Lot {self.lot_id} - Status: {self.status}>'
 
 class Reservation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     spot_id = db.Column(db.Integer, db.ForeignKey('parking_spot.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    parking_timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    leaving_timestamp = db.Column(db.DateTime, nullable=True)
-    parking_cost = db.Column(db.Float, nullable=True)
-    vehicle_number = db.Column(db.String(20), nullable=True) # Optional: if you want to store vehicle number
+    vehicle_number = db.Column(db.String(20), nullable=False) 
+    booking_timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False) # When the reservation was made
+
+    # Timestamp when the user actually checks in (parks the car)
+    check_in_timestamp = db.Column(db.DateTime, nullable=True)
+
+    # leaving_timestamp to check_out_timestamp
+    check_out_timestamp = db.Column(db.DateTime, nullable=True)
+
+    # Renamed parking_cost to total_cost
+    total_cost = db.Column(db.Float, nullable=True)
+
+    # Status for the reservation itself: 'pending', 'active', 'completed', 'cancelled'
+    status = db.Column(db.String(20), default='pending', nullable=False)
+
+    # The 'tenant' backref from User model connects to user_id
+    # The 'parking_spot' backref from ParkingSpot model connects to spot_id
 
     def __repr__(self):
-        return f'<Reservation {self.id} for Spot {self.spot_id} by User {self.user_id}>' 
+        return f'<Reservation {self.id} | Spot {self.parking_spot.spot_number if self.parking_spot else self.spot_id} | User {self.tenant.username if self.tenant else self.user_id} | Status: {self.status}>'

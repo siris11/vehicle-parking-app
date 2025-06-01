@@ -15,18 +15,22 @@
     <div class="card-body">
         <p><strong>Spot Number:</strong> {{ spot.spot_number }}</p>
         <p><strong>Status:</strong> 
-            {% if spot.status == 'O' %}
+            {% if spot.status == 'Occupied' %}
                 <span class="badge bg-danger">Occupied</span>
-            {% elif spot.status == 'A' %}
+            {% elif spot.status == 'Available' %}
                 <span class="badge bg-success">Available</span>
+            {% elif spot.status == 'Reserved' %}
+                <span class="badge bg-warning text-dark">Reserved</span>
             {% else %}
-                <span class="badge bg-secondary">{{ spot.status }}</span>
+                <span class="badge bg-info">{{ spot.status }}</span> {# Fallback for unexpected status #}
             {% endif %}
         </p>
         <p><strong>Parking Lot:</strong> <a href="{{ url_for('admin_routes.view_lot_spots', lot_id=spot.parking_lot.id) }}">{{ spot.parking_lot.name }}</a></p>
         <p><strong>Price Per Hour for this Lot:</strong> ₹{{ "%.2f"|format(spot.parking_lot.price_per_hour) }}</p>
     </div>
-    {% if spot.status == 'A' %}
+    {# Only allow delete if spot is Available and has no active/pending reservation #}
+    {# The `delete_spot` route already checks for active/pending reservations and status #}
+    {% if spot.status == 'Available' %}
     <div class="card-footer">
         <form action="{{ url_for('admin_routes.delete_spot', spot_id=spot.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to permanently delete this spot? This will also reduce the lot capacity.');">
             <button type="submit" class="btn btn-danger btn-sm">Delete This Spot</button>
@@ -35,47 +39,111 @@
     {% endif %}
 </div>
 
-{% if spot.status == 'O' and reservation %}
+{# Checking for 'Occupied' status and the existence of an active reservation #}
+{% if spot.status == 'Occupied' and reservation %}
     <div class="card mt-4">
         <div class="card-header">
             Current Reservation Details
         </div>
         <div class="card-body">
-            <p><strong>Reserved By:</strong> {{ reservation.tenant.username }} (User ID: {{ reservation.user_id }})</p>
+            <p><strong>Reserved By:</strong> {{ reservation.tenant.username }} (User ID: <a href="{{ url_for('admin_routes.user_details', user_id=reservation.tenant.id) }}">{{ reservation.tenant.id }}</a>)</p>
+            <p><strong>Full Name:</strong> {{ reservation.tenant.full_name }}</p>
             <p><strong>Email:</strong> {{ reservation.tenant.email }}</p>
-            <p><strong>Parking Timestamp:</strong> {{ reservation.parking_timestamp.strftime('%Y-%m-%d %H:%M:%S') }} (UTC)</p>
+            <p><strong>Check-in Timestamp:</strong> {{ reservation.check_in_timestamp.strftime('%Y-%m-%d %H:%M:%S') }} (UTC)</p>
             <p><strong>Vehicle Number:</strong> {{ reservation.vehicle_number if reservation.vehicle_number else 'Not Provided' }}</p>
-            {# Calculation of duration and current cost could be added here if needed #}
+            <p><strong>Reservation Status:</strong> <span class="badge bg-success text-white">{{ reservation.status | title }}</span></p>
         </div>
     </div>
-{% elif spot.status == 'O' and not reservation %}
+{# Check for 'Occupied' but no reservation #}
+{% elif spot.status == 'Occupied' and not reservation %}
     <div class="alert alert-warning mt-4" role="alert">
         This spot is marked Occupied, but no active reservation record was found. This might indicate an inconsistency.
     </div>
-{% elif spot.status == 'A' %}
-     <div class="alert alert-info mt-4" role="alert">
+{# NEW: Display pending reservation details if spot is Reserved #}
+{% elif spot.status == 'Reserved' and reservation %}
+    <div class="card mt-4">
+        <div class="card-header">
+            Pending Reservation Details
+        </div>
+        <div class="card-body">
+            <p><strong>Reserved By:</strong> {{ reservation.tenant.username }} (User ID: <a href="{{ url_for('admin_routes.user_details', user_id=reservation.tenant.id) }}">{{ reservation.tenant.id }}</a>)</p>
+            <p><strong>Full Name:</strong> {{ reservation.tenant.full_name }}</p>
+            <p><strong>Email:</strong> {{ reservation.tenant.email }}</p>
+            <p><strong>Booking Timestamp:</strong> {{ reservation.booking_timestamp.strftime('%Y-%m-%d %H:%M:%S') }} (UTC)</p>
+            <p><strong>Vehicle Number:</strong> {{ reservation.vehicle_number if reservation.vehicle_number else 'Not Provided' }}</p>
+            <p><strong>Reservation Status:</strong> <span class="badge bg-warning text-dark">{{ reservation.status | title }}</span></p>
+        </div>
+    </div>
+{# Info message for Available spots #}
+{% elif spot.status == 'Available' %}
+    <div class="alert alert-info mt-4" role="alert">
         This spot is currently available.
     </div>
 {% endif %}
 
 <h4 class="mt-4">Reservation History for this Spot</h4>
-{% if spot.reservations.order_by(Reservation.parking_timestamp.desc()).all() %}
+{# Order by booking_timestamp #}
+{% if spot.spot_reservations.order_by(Reservation.booking_timestamp.desc()).all() %}
     <table class="table table-sm table-hover mt-2">
         <thead>
             <tr>
                 <th>User</th>
-                <th>Parked At</th>
-                <th>Left At</th>
-                <th>Cost</th>
+                <th>Vehicle</th>
+                <th>Booked At</th> 
+                <th>Check-in At</th> 
+                <th>Check-out At</th> 
+                <th>Status</th>
+                <th>Total Cost</th> 
             </tr>
         </thead>
         <tbody>
-            {% for res in spot.reservations.order_by(Reservation.parking_timestamp.desc()).all() %}
+            {# Loop through all reservations for this spot #}
+            {% for res in spot.spot_reservations.order_by(Reservation.booking_timestamp.desc()).all() %} {# Corrected to spot_reservations here #}
                 <tr>
-                    <td>{{ res.tenant.username }}</td>
-                    <td>{{ res.parking_timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td>{{ res.leaving_timestamp.strftime('%Y-%m-%d %H:%M') if res.leaving_timestamp else 'Still Parked' }}</td>
-                    <td>{{ '₹%.2f'|format(res.parking_cost) if res.parking_cost is not none else 'N/A' }}</td>
+                    <td>
+                        {% if res.tenant %} 
+                            <a href="{{ url_for('admin_routes.user_details', user_id=res.tenant.id) }}">{{ res.tenant.username }}</a> 
+                        {% else %}
+                            N/A (User Deleted)
+                        {% endif %}
+                    </td>
+                    <td>{{ res.vehicle_number if res.vehicle_number else 'N/A' }}</td>
+                    <td>{{ res.booking_timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        {% if res.check_in_timestamp %}
+                            {{ res.check_in_timestamp.strftime('%Y-%m-%d %H:%M') }}
+                        {% else %}
+                            <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if res.check_out_timestamp %}
+                            {{ res.check_out_timestamp.strftime('%Y-%m-%d %H:%M') }}
+                        {% else %}
+                            <span class="text-muted">N/A</span> {# For active/pending #}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {# Display status as a badge #}
+                        {% if res.status == 'active' %}
+                            <span class="badge bg-success text-white">{{ res.status | title }}</span>
+                        {% elif res.status == 'pending' %}
+                            <span class="badge bg-warning text-dark">{{ res.status | title }}</span>
+                        {% elif res.status == 'completed' %}
+                            <span class="badge bg-info text-dark">{{ res.status | title }}</span>
+                        {% elif res.status == 'cancelled' %}
+                            <span class="badge bg-danger text-white">{{ res.status | title }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary text-white">{{ res.status | title }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if res.total_cost is not none %}
+                            ₹{{ "%.2f"|format(res.total_cost) }}
+                        {% else %}
+                            <span class="text-muted">N/A</span> {# For pending/active bookings #}
+                        {% endif %}
+                    </td>
                 </tr>
             {% endfor %}
         </tbody>
@@ -84,4 +152,4 @@
     <p>No reservation history for this spot.</p>
 {% endif %}
 
-{% endblock %} 
+{% endblock %}

@@ -6,7 +6,7 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">{{ title }}</h1>
     <div>
-        <a href="{{ url_for('admin_routes.edit_parking_lot', lot_id=lot.id) }}" class="btn btn-sm btn-outline-secondary">Edit Lot Details</a>
+        <a href="{{ url_for('admin_routes.edit_parking_lot', lot_id=lot.id) }}" class="btn btn-sm btn-outline-secondary me-2">Edit Lot Details</a>
         <a href="{{ url_for('admin_routes.list_parking_lots') }}" class="btn btn-sm btn-outline-info">Back to All Lots</a>
     </div>
 </div>
@@ -16,8 +16,9 @@
     <strong>Pin Code:</strong> {{ lot.pin_code if lot.pin_code else 'N/A' }}<br>
     <strong>Price/Hour:</strong> ₹{{ "%.2f"|format(lot.price_per_hour) }}<br>
     <strong>Total Capacity:</strong> {{ lot.maximum_capacity }} spots<br>
-    <strong>Currently Occupied:</strong> {{ lot.spots.filter_by(status='O').count() }} spots<br>
-    <strong>Currently Available:</strong> {{ lot.spots.filter_by(status='A').count() }} spots
+    <strong>Currently Occupied:</strong> {{ lot.spots.filter_by(status='Occupied').count() }} spots<br>
+    <strong>Currently Reserved:</strong> {{ lot.spots.filter_by(status='Reserved').count() }} spots<br> {# NEW #}
+    <strong>Currently Available:</strong> {{ lot.spots.filter_by(status='Available').count() }} spots
 </p>
 
 <h3 class="mt-4">Parking Spots Status</h3>
@@ -25,19 +26,30 @@
 <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 g-3">
     {% for spot in spots %}
     <div class="col">
-        <div class="card h-100 text-center shadow-sm {% if spot.status == 'O' %}border-danger bg-danger-subtle{% elif spot.status == 'A' %}border-success bg-success-subtle{% else %}bg-light{% endif %}">
+        <div class="card h-100 text-center shadow-sm 
+            {# MODIFIED: Use full status names for styling #}
+            {% if spot.status == 'Occupied' %}border-danger bg-danger-subtle
+            {% elif spot.status == 'Reserved' %}border-warning bg-warning-subtle
+            {% elif spot.status == 'Available' %}border-success bg-success-subtle
+            {% else %}bg-light border-secondary {# Fallback for other unexpected statuses #}
+            {% endif %}
+        ">
             <div class="card-header bg-transparent border-bottom-0">
                 <h5 class="card-title mb-0">{{ spot.spot_number }}</h5>
             </div>
             <div class="card-body py-2">
-                {% if spot.status == 'O' %}
+                {% if spot.status == 'Occupied' %}
                     <p class="card-text fw-bold text-danger">Occupied</p>
                     <a href="{{ url_for('admin_routes.view_spot_details', spot_id=spot.id) }}" class="btn btn-sm btn-outline-danger">View Details</a>
-                {% elif spot.status == 'A' %}
+                {% elif spot.status == 'Reserved' %}
+                    <p class="card-text fw-bold text-warning">Reserved</p>
+                    <a href="{{ url_for('admin_routes.view_spot_details', spot_id=spot.id) }}" class="btn btn-sm btn-outline-warning">View Details</a>
+                {% elif spot.status == 'Available' %}
                     <p class="card-text fw-bold text-success">Available</p>
-                     <a href="{{ url_for('admin_routes.view_spot_details', spot_id=spot.id) }}" class="btn btn-sm btn-outline-secondary">Details</a>
+                    <a href="{{ url_for('admin_routes.view_spot_details', spot_id=spot.id) }}" class="btn btn-sm btn-outline-secondary">Details</a>
                 {% else %}
-                    <p class="card-text">{{ spot.status }}</p> {# Should ideally not happen #}
+                    <p class="card-text text-muted">{{ spot.status }}</p> {# Fallback for any other unexpected statuses #}
+                    <a href="{{ url_for('admin_routes.view_spot_details', spot_id=spot.id) }}" class="btn btn-sm btn-outline-secondary">Details</a>
                 {% endif %}
             </div>
         </div>
@@ -46,7 +58,7 @@
 </div>
 {% else %}
 <div class="alert alert-info" role="alert">
-  No spots found for this parking lot. This might indicate an issue or the lot was just created with zero capacity.
+    No spots found for this parking lot. This might indicate an issue or the lot was just created with zero capacity.
 </div>
 {% endif %}
-{% endblock %} 
+{% endblock %}

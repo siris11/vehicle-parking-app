@@ -1,6 +1,6 @@
 # 1. Import necessary objects
 # Enter the Flask shell: flask shell
-# Inside the >>> prompt, type: exec(open('create_admin_user.py').read())
+# Inside the >>> prompt, type: exec(open('app/create_admin_user.py').read())
 # After the script finishes, type exit() to leave the Flask shell.
 
 from app import db 
@@ -12,6 +12,7 @@ print("Database tables created (if they didn't exist).")
 
 # 3. Define the credentials for the root user
 username = 'root'
+full_name = 'Root User' 
 email = 'root@example.com' 
 password = 'root098' 
 
@@ -23,15 +24,14 @@ if existing_user:
     # If the user exists, ensure they are an admin
     if not existing_user.is_admin:
         existing_user.is_admin = True
+        if not existing_user.full_name:
+            existing_user.full_name = full_name 
         db.session.commit()
         print(f"User '{username}' promoted to admin.")
     else:
         print(f"User '{username}' is already an admin.")
 else:
-    # 5. Create the new User instance
-    new_user = User(username=username, email=email)
-
-    # 6. Set the password (this will hash it using your set_password method from app.models)
+    new_user = User(username=username, full_name=full_name, email=email) 
     new_user.set_password(password)
 
     # 7. Set the user as an administrator
@@ -46,8 +46,6 @@ else:
 all_users = User.query.all()
 print("\nAll users in database:")
 for user in all_users:
-    print(f"  - Username: {user.username}, Email: {user.email}, Admin: {user.is_admin}")
+    print(f"   - Username: {user.username}, Full Name: {user.full_name}, Email: {user.email}, Admin: {user.is_admin}")
 
-# Note: You do NOT need 'exit()' in this script.
-# You will type 'exit()' in the Flask shell manually after running this script.
-
+# type 'exit()' in the Flask shell manually after running this script.

@@ -6,12 +6,12 @@
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-8 offset-md-2 col-lg-6 offset-lg-3">
-            <h1 class="mb-4 text-center">{{ title }}</h1>
+            <h1 class="mb-4 text-center text-primary">{{ title }}</h1>
 
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, message in messages %}
-                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
                             {{ message }}
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
@@ -19,46 +19,66 @@
                 {% endif %}
             {% endwith %}
 
-            {% if reservation and not reservation.leaving_timestamp %}
-                <div class="card mb-4">
-                    <div class="card-header">
-                        Reservation Details
+            {% if reservation and reservation.status == 'active' %}
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Reservation Details</h5>
                     </div>
                     <div class="card-body">
                         <p><strong>Parking Lot:</strong> {{ reservation.parking_spot.parking_lot.name }}</p>
                         <p><strong>Spot Number:</strong> {{ reservation.parking_spot.spot_number }}</p>
                         <p><strong>Vehicle Number:</strong> {{ reservation.vehicle_number if reservation.vehicle_number else 'N/A' }}</p>
-                        <p><strong>Parked At:</strong> {{ reservation.parking_timestamp.strftime('%Y-%m-%d %H:%M:%S') }} (UTC)</p>
-                        <p><strong>Current Time:</strong> {{ datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S') }} (UTC)</p>
+                        <p>
+                            <strong>Parked At:</strong> 
+                            {{ reservation.check_in_timestamp.strftime('%Y-%m-%d %H:%M:%S') }} (UTC)
+                        </p>
+                        <p>
+                            <strong>Current Time:</strong> 
+                            {{ datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S') }} (UTC) {# Display current UTC time from server #}
+                        </p>
+                        <p>
+                            <strong>Lot Price:</strong> 
+                            ₹{{ "%.2f"|format(reservation.parking_spot.parking_lot.price_per_hour) }}/hour
+                        </p>
+                        <hr>
+                        {# Estimated Cost Section - Now passed from server #}
+                        <h5 class="text-center text-warning">Estimated Cost & Duration</h5>
+                        <p class="lead text-center mb-1">
+                            Duration: <strong>{{ estimated_duration_string }}</strong> {# Value provided by Flask route #}
+                        </p>
+                        <p class="lead text-center">
+                            Cost: <strong class="text-danger">₹{{ "%.2f"|format(estimated_cost) }}</strong> 
+                        </p>
                         <hr>
                         <p class="text-muted small">
-                            Releasing this spot will mark it as available and calculate the final parking cost based on the duration and the lot's price per hour (₹{{ reservation.parking_spot.parking_lot.price_per_hour }}/hour).
+                            Releasing this spot will mark it as available and calculate the final parking cost based on the duration and the lot's price per hour. A minimum charge equivalent to one hour's price applies for any duration parked.
                         </p>
                     </div>
                 </div>
 
-                <form method="POST" action="{{ url_for('user_routes.release_spot_action', reservation_id=reservation.id) }}" onsubmit="return confirm('Are you sure you want to release this parking spot? This action cannot be undone.');">
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                <form method="POST" action="{{ url_for('user_routes.park_out_action', reservation_id=reservation.id) }}" onsubmit="return confirm('Are you sure you want to release this parking spot? This action cannot be undone and final cost will be calculated.');">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
                         <a href="{{ url_for('user_routes.dashboard') }}" class="btn btn-outline-secondary me-md-2">Cancel</a>
                         <button type="submit" class="btn btn-warning">Confirm & Release Spot</button>
                     </div>
                 </form>
-            {% elif reservation and reservation.leaving_timestamp %}
-                <div class="alert alert-info" role="alert">
-                    This reservation has already been completed and the spot released on {{ reservation.leaving_timestamp.strftime('%Y-%m-%d %H:%M') }}.
+            {% elif reservation and reservation.status != 'active' %}
+                <div class="alert alert-info shadow-sm" role="alert">
+                    This reservation is already **{{ reservation.status.capitalize() }}**. The spot was {{ 'released' if reservation.status == 'completed' else 'marked as ' ~ reservation.status }} on 
+                    {% if reservation.check_out_timestamp %}{{ reservation.check_out_timestamp.strftime('%Y-%m-%d %H:%M') }}{% elif reservation.cancellation_timestamp %}{{ reservation.cancellation_timestamp.strftime('%Y-%m-%d %H:%M') }}{% else %}N/A{% endif %}.
                 </div>
-                <div class="text-center">
-                     <a href="{{ url_for('user_routes.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+                <div class="text-center mt-3">
+                   <a href="{{ url_for('user_routes.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
                 </div>
             {% else %}
-                 <div class="alert alert-danger" role="alert">
+               <div class="alert alert-danger shadow-sm" role="alert">
                     Reservation details not found or invalid.
                 </div>
-                <div class="text-center">
-                     <a href="{{ url_for('user_routes.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+                <div class="text-center mt-3">
+                   <a href="{{ url_for('user_routes.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
                 </div>
             {% endif %}
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}
