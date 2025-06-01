@@ -1,11 +1,9 @@
 Flask
 Flask-SQLAlchemy
-Flask-Migrate
 Flask-WTF
 Flask-Login
 Bootstrap-Flask
 email_validator 
 Werkzeug
 MarkupSafe
-Flask-Migrate
 Flask-Bootstrap
