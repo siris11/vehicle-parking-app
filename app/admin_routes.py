@@ -212,4 +212,19 @@ def list_users():
     users = User.query.filter_by(is_admin=False).order_by(User.username).all()
     return render_template('admin/list_users.html', users=users, title='Registered Users')
 
+
+# NEW ROUTE: User Details for Admin
+@bp.route('/user_details/<int:user_id>')
+@login_required
+@admin_required
+def user_details(user_id):
+    user = User.query.get_or_404(user_id)
+    # Fetch all reservations for this user, ordered by most recent first
+    reservations = user.reservations.order_by(Reservation.parking_timestamp.desc()).all()
+    
+    return render_template('admin/user_details.html', 
+                           user=user, 
+                           reservations=reservations, 
+                           title=f'Details for {user.username}')
+
 # Add routes for summary charts --?PENDING,NEED TO DO

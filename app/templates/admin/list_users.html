@@ -27,7 +27,8 @@
                 <td>{{ user_item.email }}</td>
                 <td>{{ user_item.reservations.count() }}</td>
                 <td>
-                    <a href="#" class="btn btn-sm btn-outline-info">View Details</a> {# Placeholder for a user detail page if needed #}
+                    {# UPDATED LINK #}
+                    <a href="{{ url_for('admin_routes.user_details', user_id=user_item.id) }}" class="btn btn-sm btn-outline-info">View Details</a> 
                     {# Add other actions like disable user if needed #}
                 </td>
             </tr>
@@ -37,8 +38,7 @@
 </div>
 {% else %}
 <div class="alert alert-info" role="alert">
-  No registered users found (excluding admin).
+    No registered users found (excluding admin).
 </div>
 {% endif %}
 {% endblock %}
- 
