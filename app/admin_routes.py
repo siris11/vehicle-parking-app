@@ -174,7 +174,7 @@ def edit_parking_lot(lot_id):
         flash(f'Parking lot \'{lot.name}\' updated successfully!', 'success')
         return redirect(url_for('admin_routes.list_parking_lots'))
     
-    return render_template('admin/create_edit_parking_lot.html', form=form, title='Edit Parking Lot', legend=f'Edit {lot.name}', lot=lot) 
+    return render_template('admin/create_edit_parking_lot.html', form=form, title='Edit Parking Lot', legend=f'Edit {lot.name}', lot=lot, ParkingSpot=ParkingSpot) 
 
 @bp.route('/parking_lot/delete/<int:lot_id>', methods=['POST'])
 @login_required
@@ -279,5 +279,5 @@ def user_details(user_id):
     
     return render_template('admin/user_details.html', 
                             user=user, 
-                            reservations=reservations, 
+                            reservations=reservations,
                             title=f'Details for {user.full_name}')
