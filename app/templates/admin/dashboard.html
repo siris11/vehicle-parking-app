@@ -3,7 +3,7 @@
 {% block title %}Admin Dashboard - {{ super() }}{% endblock %}
 
 {% block head_css %}
-    {# <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> #}
+    {# Chart.js script is included in the 'scripts' block at the bottom for performance #}
 {% endblock %}
 
 {% block content %}
@@ -19,59 +19,95 @@
 
 <div class="row">
     {# Total Parking Lots #}
-    <div class="col-md-3 col-sm-6 mb-3">
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3"> 
         <div class="card text-white bg-primary shadow-sm h-100">
             <div class="card-body d-flex flex-column justify-content-between">
-                <h5 class="card-title mb-0">Total Parking Lots</h5>
+                <h5 class="card-title mb-0" style="font-size: 0.9rem;">Total Parking Lots</h5> 
                 <p class="card-text fs-4 text-end mt-2">{{ lots|length }}</p>
             </div>
         </div>
     </div>
     {# Total Parking Spots #}
-    <div class="col-md-3 col-sm-6 mb-3">
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
         <div class="card text-white bg-info shadow-sm h-100">
             <div class="card-body d-flex flex-column justify-content-between">
-                <h5 class="card-title mb-0">Total Parking Spots</h5>
+                <h5 class="card-title mb-0" style="font-size: 0.9rem;">Total Parking Spots</h5>
                 <p class="card-text fs-4 text-end mt-2">{{ total_spots }}</p>
             </div>
         </div>
     </div>
     {# Available Spots #}
-    <div class="col-md-3 col-sm-6 mb-3">
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3"> 
         <div class="card text-white bg-success shadow-sm h-100">
             <div class="card-body d-flex flex-column justify-content-between">
-                <h5 class="card-title mb-0">Available Spots</h5>
-                {# This variable will be passed from admin_routes.py filtering by 'Available' #}
+                <h5 class="card-title mb-0" style="font-size: 0.9rem;">Available Spots</h5>
                 <p class="card-text fs-4 text-end mt-2">{{ available_spots }}</p>
             </div>
         </div>
     </div>
     {# Occupied Spots #}
-    <div class="col-md-3 col-sm-6 mb-3">
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3"> 
         <div class="card text-white bg-danger shadow-sm h-100">
             <div class="card-body d-flex flex-column justify-content-between">
-                <h5 class="card-title mb-0">Occupied Spots</h5>
-                {# This variable will be passed from admin_routes.py filtering by 'Occupied' #}
+                <h5 class="card-title mb-0" style="font-size: 0.9rem;">Occupied Spots</h5>
                 <p class="card-text fs-4 text-end mt-2">{{ occupied_spots }}</p>
             </div>
         </div>
     </div>
-    {# Reserved Spots - NEW CARD #}
-    <div class="col-md-3 col-sm-6 mb-3">
+    {# Reserved Spots #}
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3"> 
         <div class="card text-dark bg-warning shadow-sm h-100">
             <div class="card-body d-flex flex-column justify-content-between">
-                <h5 class="card-title mb-0">Reserved Spots</h5>
-                {# This variable will be passed from admin_routes.py filtering by 'Reserved' #}
-                <p class="card-text fs-4 text-end mt-2">{{ reserved_spots if reserved_spots is not none else 'N/A' }}</p>
+                <h5 class="card-title mb-0" style="font-size: 0.9rem;">Reserved Spots</h5>
+                <p class="card-text fs-4 text-end mt-2">{{ reserved_spots if reserved_spots is not none else 0 }}</p>
             </div>
         </div>
     </div>
     {# Registered Users #}
-    <div class="col-md-3 col-sm-6 mb-3">
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3"> 
         <div class="card text-dark bg-light shadow-sm h-100">
             <div class="card-body d-flex flex-column justify-content-between">
-                <h5 class="card-title mb-0">Registered Users</h5>
+                <h5 class="card-title mb-0" style="font-size: 0.9rem;">Registered Users</h5>
                 <p class="card-text fs-4 text-end mt-2">{{ registered_users }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h2 class="mt-4">Overview Charts</h2>
+<div class="row mb-4">
+    {# Chart 1: Parking Spot Status Distribution (Doughnut) #}
+    <div class="col-lg-4 col-md-6 mb-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Parking Spot Status</h5>
+            </div>
+            <div class="card-body d-flex justify-content-center align-items-center">
+                <canvas id="spotStatusChart" style="max-height: 250px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    {# Chart 2: Reservation Status Breakdown (Bar Chart) #}
+    <div class="col-lg-4 col-md-6 mb-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Reservation Status Breakdown</h5>
+            </div>
+            <div class="card-body d-flex justify-content-center align-items-center">
+                <canvas id="reservationStatusChart" style="max-height: 250px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    {# Chart 3: Daily Bookings Trend (Line Chart) #}
+    <div class="col-lg-4 col-md-12 mb-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Daily Bookings (Last 7 Days)</h5>
+            </div>
+            <div class="card-body d-flex justify-content-center align-items-center">
+                <canvas id="dailyBookingsChart" style="max-height: 250px;"></canvas>
             </div>
         </div>
     </div>
@@ -85,9 +121,9 @@
                 <th>Name</th>
                 <th>Address</th>
                 <th>Capacity</th>
-                <th>Occupied</th> {# Count of 'Occupied' spots #}
-                <th>Reserved</th> {# Count of 'Reserved' spots #}
-                <th>Available</th> {# Count of 'Available' spots #}
+                <th>Occupied</th>
+                <th>Reserved</th>
+                <th>Available</th>
                 <th>Price/Hour</th>
                 <th>Actions</th>
             </tr>
@@ -98,7 +134,6 @@
                 <td><a href="{{ url_for('admin_routes.view_lot_spots', lot_id=lot.id) }}">{{ lot.name }}</a></td>
                 <td>{{ lot.address if lot.address else 'N/A' }}</td>
                 <td>{{ lot.maximum_capacity }}</td>
-                {# MODIFIED: status filters for lot-specific counts #}
                 <td><span class="badge bg-danger">{{ lot.spots.filter_by(status='Occupied').count() }}</span></td>
                 <td><span class="badge bg-warning text-dark">{{ lot.spots.filter_by(status='Reserved').count() }}</span></td>
                 <td><span class="badge bg-success">{{ lot.spots.filter_by(status='Available').count() }}</span></td>
@@ -121,4 +156,157 @@
 
 {% block scripts %}
 {{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Chart 1: Parking Spot Status Distribution (Doughnut Chart) ---
+        var spotStatusCtx = document.getElementById('spotStatusChart').getContext('2d');
+        var spotStatusChart = new Chart(spotStatusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Available', 'Occupied', 'Reserved'],
+                datasets: [{
+                    data: [
+                        {{ available_spots | tojson }},
+                        {{ occupied_spots | tojson }},
+                        {{ reserved_spots | tojson }}
+                    ],
+                    backgroundColor: [
+                        'rgba(40, 167, 69, 0.8)',  // success - green
+                        'rgba(220, 53, 69, 0.8)',   // danger - red
+                        'rgba(255, 193, 7, 0.8)'    // warning - yellow
+                    ],
+                    borderColor: [
+                        'rgba(40, 167, 69, 1)',
+                        'rgba(220, 53, 69, 1)',
+                        'rgba(255, 193, 7, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) label += ': ';
+                                if (context.parsed !== null) label += context.parsed + ' spots';
+                                return label;
+                            }
+                        }
+                    }
+                },
+                cutout: '70%',
+            }
+        });
+
+        // --- Chart 2: Reservation Status Breakdown (Bar Chart) ---
+        var reservationStatusCtx = document.getElementById('reservationStatusChart').getContext('2d');
+        var reservationStatusChart = new Chart(reservationStatusCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Pending', 'Active', 'Completed', 'Cancelled'],
+                datasets: [{
+                    label: 'Number of Reservations',
+                    data: [
+                        {{ pending_reservations | tojson }},
+                        {{ active_reservations | tojson }},
+                        {{ completed_reservations | tojson }},
+                        {{ cancelled_reservations | tojson }}
+                    ],
+                    backgroundColor: [
+                        'rgba(23, 162, 184, 0.8)', // info - teal
+                        'rgba(0, 123, 255, 0.8)', // primary - blue
+                        'rgba(40, 167, 69, 0.8)', // success - green
+                        'rgba(108, 117, 125, 0.8)' // secondary - grey
+                    ],
+                    borderColor: [
+                        'rgba(23, 162, 184, 1)',
+                        'rgba(0, 123, 255, 1)',
+                        'rgba(40, 167, 69, 1)',
+                        'rgba(108, 117, 125, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) { if (Number.isInteger(value)) { return value; } }
+                        }
+                    }
+                }
+            }
+        });
+
+        // --- Chart 3: Daily Bookings Trend (Line Chart) ---
+        var dailyBookingsCtx = document.getElementById('dailyBookingsChart').getContext('2d');
+        var dailyBookingsChart = new Chart(dailyBookingsCtx, {
+            type: 'line',
+            data: {
+                labels: {{ daily_reservation_labels | tojson }}, // e.g., ['Jun 26', 'Jun 27', ...]
+                datasets: [{
+                    label: 'Bookings',
+                    data: {{ daily_reservation_counts | tojson }}, // e.g., [5, 8, 3, ...]
+                    backgroundColor: 'rgba(0, 123, 255, 0.5)',
+                    borderColor: 'rgba(0, 123, 255, 1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true, position: 'top' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) { if (Number.isInteger(value)) { return value; } }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Number of Bookings'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
+                    }
+                }
+            }
+        });
+
+    });
+</script>
 {% endblock %}

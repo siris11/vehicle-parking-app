@@ -21,81 +21,106 @@
     {% endwith %}
 
     {# 1. User's Current & Recent Reservations #}
-    <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">Your Parking Reservations</h4>
-        </div>
-        <div class="card-body">
-            {% if user_reservations_table %}
-                <div class="table-responsive">
-                    <table class="table table-hover table-sm mb-0 align-middle">
-                        <thead>
-                            <tr>
-                                <th>Lot Name</th>
-                                <th>Spot</th>
-                                <th>Vehicle No.</th>
-                                <th>Booked At</th> {# Changed from Parked At #}
-                                <th>Parking Time</th>
-                                <th>Status</th>
-                                <th>Cost</th> 
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for res in user_reservations_table %}
-                                <tr>
-                                    <td>{{ res.parking_spot.parking_lot.name }}</td>
-                                    <td>{{ res.parking_spot.spot_number }}</td>
-                                    <td>{{ res.vehicle_number if res.vehicle_number else 'N/A'}}</td>
-                                    <td>{{ res.booking_timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
-                                    <td>
-                                        {% if res.parking_timestamp %}{{ res.parking_timestamp.strftime('%Y-%m-%d %H:%M') }}{% else %}-{% endif %}
-                                    </td>
-                                    <td>
-                                        {% if res.status == 'active' %}
-                                            <span class="badge bg-success">Active</span>
-                                        {% elif res.status == 'pending' %}
-                                            <span class="badge bg-info">Pending</span>
-                                        {% elif res.status == 'completed' %}
-                                            <span class="badge bg-secondary">Completed</span>
-                                        {% elif res.status == 'cancelled' %}
-                                            <span class="badge bg-danger">Cancelled</span>
-                                        {% else %}
-                                            <span class="badge bg-light text-dark">{{ res.status }}</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if res.total_cost is not none %}
-                                            ₹{{ "%.2f"|format(res.total_cost) }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {# Conditional Actions based on status #}
-                                        {% if res.status == 'pending' %}
-                                            <form action="{{ url_for('user_routes.check_in_reservation', reservation_id=res.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Confirm check-in for this reservation?');">
-                                                <button type="submit" class="btn btn-sm btn-success me-1">Check In</button>
-                                            </form>
-                                            <form action="{{ url_for('user_routes.cancel_reservation', reservation_id=res.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this reservation?');">
-                                                <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
-                                            </form>
-                                        {% elif res.status == 'active' %}
-                                            <a href="{{ url_for('user_routes.park_out_page', reservation_id=res.id) }}" class="btn btn-sm btn-warning">Park Out</a>
-                                        {% else %}
-                                            - {# No actions for completed or cancelled reservations #}
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <p class="mb-0 text-muted">You have no active, pending, or recent parking reservations.</p>
-            {% endif %}
-        </div>
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">Your Parking Reservations</h4>
     </div>
+    <div class="card-body">
+        {% if user_reservations_table %}
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th>Lot Name</th>
+                            <th>Spot</th>
+                            <th>Vehicle No.</th>
+                            <th>Booked At</th>
+                            <th>Parking Time</th> {# This column will now show duration #}
+                            <th>Status</th>
+                            <th>Cost</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for res in user_reservations_table %}
+                            <tr>
+                                <td>{{ res.parking_spot.parking_lot.name }}</td>
+                                <td>{{ res.parking_spot.spot_number }}</td>
+                                <td>{{ res.vehicle_number if res.vehicle_number else 'N/A'}}</td>
+                                <td>{{ res.booking_timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    {# Logic to calculate and display Parking Time (duration) #}
+                                    {% if res.check_in_timestamp and res.check_out_timestamp %}
+                                        {% set duration = res.check_out_timestamp - res.check_in_timestamp %}
+                                        {% set total_seconds = duration.total_seconds() %}
+                                        {% set hours = total_seconds // 3600 %}
+                                        {% set minutes = (total_seconds % 3600) // 60 %}
+
+                                        {% if hours > 0 and minutes > 0 %}
+                                            {{ "%d hours %d minutes" % (hours, minutes) }}
+                                        {% elif hours > 0 %}
+                                            {{ "%d hours" % hours }}
+                                        {% elif minutes > 0 %}
+                                            {{ "%d minutes" % minutes }}
+                                        {% else %}
+                                            Less than a minute
+                                        {% endif %}
+                                    {% elif res.status == 'active' %}
+                                        <span class="badge bg-primary">Ongoing</span> {# For active reservations, duration is not yet known #}
+                                    {% else %}
+                                        - {# For pending or cancelled reservations where no actual parking occurred #}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {# Display Reservation Status #}
+                                    {% if res.status == 'active' %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% elif res.status == 'pending' %}
+                                        <span class="badge bg-info">Pending</span>
+                                    {% elif res.status == 'completed' %}
+                                        <span class="badge bg-secondary">Completed</span>
+                                    {% elif res.status == 'cancelled' %}
+                                        <span class="badge bg-danger">Cancelled</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">{{ res.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if res.total_cost is not none %}
+                                        ₹{{ "%.2f"|format(res.total_cost) }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {# Conditional Actions based on status #}
+                                    {% if res.status == 'pending' %}
+                                        <form action="{{ url_for('user_routes.check_in_reservation', reservation_id=res.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Confirm check-in for this reservation?');">
+                                            <button type="submit" class="btn btn-sm btn-success me-1">Check In</button>
+                                        </form>
+                                        <form action="{{ url_for('user_routes.cancel_reservation', reservation_id=res.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this reservation?');">
+                                            <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
+                                        </form>
+                                    {% elif res.status == 'active' %}
+                                        <a href="{{ url_for('user_routes.park_out_page', reservation_id=res.id) }}" class="btn btn-sm btn-warning">Park Out</a>
+                                    {% else %}
+                                        - {# No actions for completed or cancelled reservations #}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center">You have no active, pending, or recent parking reservations.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="mb-0 text-muted">You have no active, pending, or recent parking reservations.</p>
+        {% endif %}
+    </div>
+</div>
 
     {# 2. Search Parking Lots #}
     <div class="card mb-4 shadow-sm">

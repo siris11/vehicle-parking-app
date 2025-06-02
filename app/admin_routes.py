@@ -2,9 +2,11 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import current_user, login_required
 from functools import wraps
 from .forms import ParkingLotForm
-# Ensure Reservation is imported here
+# Ensure all models are imported
 from .models import ParkingLot, ParkingSpot, User, Reservation 
 from . import db
+import datetime # Import datetime module
+from sqlalchemy import func # Import func for database functions like DATE
 
 bp = Blueprint('admin_routes', __name__)
 
@@ -22,27 +24,62 @@ def admin_required(f):
 @login_required
 @admin_required
 def dashboard():
+    # --- Data for Summary Cards & Chart 1 (Spot Status) ---
     lots = ParkingLot.query.order_by(ParkingLot.name).all()
     
     total_spots = int(ParkingSpot.query.count() or 0)
-    # Count spots with 'Occupied' status
     occupied_spots_overall = int(ParkingSpot.query.filter_by(status='Occupied').count() or 0)
-    # Count spots with 'Reserved' status
     reserved_spots_overall = int(ParkingSpot.query.filter_by(status='Reserved').count() or 0)
-    # Calculate available spots by subtracting both occupied and reserved
     available_spots_overall = total_spots - occupied_spots_overall - reserved_spots_overall
     
     registered_users = int(User.query.filter_by(is_admin=False).count() or 0)
 
     current_lots = lots if lots else []
 
-    return render_template('admin/dashboard.html', title='Admin Dashboard',
-                            lots=current_lots,
-                            total_spots=total_spots,
-                            occupied_spots=occupied_spots_overall,
-                            reserved_spots=reserved_spots_overall, 
-                            available_spots=available_spots_overall,
-                            registered_users=registered_users)
+    # --- Data for Chart 2 (Reservation Status Breakdown) ---
+    # Count reservations by their status
+    pending_reservations = Reservation.query.filter_by(status='pending').count()
+    active_reservations = Reservation.query.filter_by(status='active').count()
+    completed_reservations = Reservation.query.filter_by(status='completed').count()
+    cancelled_reservations = Reservation.query.filter_by(status='cancelled').count()
+
+    # --- Data for Chart 3 (Daily Bookings Trend - Last 7 Days) ---
+    daily_reservation_labels = []
+    daily_reservation_counts = []
+    
+    # Get today's date
+    today = datetime.date.today()
+    
+    # Loop for the last 7 days (from 6 days ago up to today)
+    for i in range(6, -1, -1): 
+        date = today - datetime.timedelta(days=i)
+        
+        # Format date for chart labels (e.g., 'Jun 01')
+        daily_reservation_labels.append(date.strftime('%b %d'))
+        
+        # Count bookings for this specific date based on booking_timestamp
+        # func.date() is used to extract the date part from a datetime column for comparison.
+        count = db.session.query(Reservation).filter(
+            func.date(Reservation.booking_timestamp) == date.strftime('%Y-%m-%d')
+        ).count()
+        daily_reservation_counts.append(count)
+
+
+    return render_template('admin/dashboard.html', 
+                           title='Admin Dashboard',
+                           lots=current_lots,
+                           total_spots=total_spots,
+                           occupied_spots=occupied_spots_overall,
+                           reserved_spots=reserved_spots_overall, 
+                           available_spots=available_spots_overall,
+                           registered_users=registered_users,
+                           # Data for charts
+                           pending_reservations=pending_reservations,
+                           active_reservations=active_reservations,
+                           completed_reservations=completed_reservations,
+                           cancelled_reservations=cancelled_reservations,
+                           daily_reservation_labels=daily_reservation_labels,
+                           daily_reservation_counts=daily_reservation_counts)
 
 @bp.route('/parking_lots')
 @login_required
@@ -70,7 +107,6 @@ def create_parking_lot():
         # Create parking spots for the lot
         for i in range(1, form.maximum_capacity.data + 1):
             spot_number = f"S{i:03d}" 
-            # Default status to 'Available' 
             spot = ParkingSpot(spot_number=spot_number, lot_id=new_lot.id, status='Available')
             db.session.add(spot)
         
@@ -106,8 +142,6 @@ def edit_parking_lot(lot_id):
         if new_capacity < original_capacity:
             spots_to_remove_count = original_capacity - new_capacity
             
-            # Filter for 'Available' spots and ensure no active/pending reservations
-            # We need to explicitly check the Reservation model's status
             truly_available_spots_query = ParkingSpot.query.filter(
                 ParkingSpot.lot_id == lot.id,
                 ParkingSpot.status == 'Available'
@@ -115,7 +149,6 @@ def edit_parking_lot(lot_id):
 
             truly_available_spots = []
             for spot_candidate in truly_available_spots_query:
-                # Check if there's any active or pending reservation for this spot
                 active_or_pending_reservation = Reservation.query.filter(
                     Reservation.spot_id == spot_candidate.id,
                     Reservation.status.in_(['pending', 'active'])
