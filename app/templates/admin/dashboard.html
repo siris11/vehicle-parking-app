@@ -160,17 +160,17 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // --- Chart 1: Parking Spot Status Distribution (Doughnut Chart) ---
+        const availableSpots = JSON.parse('[{{ available_spots | tojson }}]')[0];
+        const occupiedSpots = JSON.parse('[{{ occupied_spots | tojson }}]')[0];
+        const reservedSpots = JSON.parse('[{{ reserved_spots | tojson }}]')[0];
+
         var spotStatusCtx = document.getElementById('spotStatusChart').getContext('2d');
         var spotStatusChart = new Chart(spotStatusCtx, {
             type: 'doughnut',
             data: {
                 labels: ['Available', 'Occupied', 'Reserved'],
                 datasets: [{
-                    data: [
-                        {{ available_spots | tojson }},
-                        {{ occupied_spots | tojson }},
-                        {{ reserved_spots | tojson }}
-                    ],
+                    data: [availableSpots, occupiedSpots, reservedSpots],
                     backgroundColor: [
                         'rgba(40, 167, 69, 0.8)',  // success - green
                         'rgba(220, 53, 69, 0.8)',   // danger - red
@@ -205,6 +205,12 @@
         });
 
         // --- Chart 2: Reservation Status Breakdown (Bar Chart) ---
+        const pendingReservations = JSON.parse('[{{ pending_reservations | tojson }}]')[0];
+        const activeReservations = JSON.parse('[{{ active_reservations | tojson }}]')[0];
+        const completedReservations = JSON.parse('[{{ completed_reservations | tojson }}]')[0];
+        const cancelledReservations = JSON.parse('[{{ cancelled_reservations | tojson }}]')[0];
+
+
         var reservationStatusCtx = document.getElementById('reservationStatusChart').getContext('2d');
         var reservationStatusChart = new Chart(reservationStatusCtx, {
             type: 'bar',
@@ -212,12 +218,7 @@
                 labels: ['Pending', 'Active', 'Completed', 'Cancelled'],
                 datasets: [{
                     label: 'Number of Reservations',
-                    data: [
-                        {{ pending_reservations | tojson }},
-                        {{ active_reservations | tojson }},
-                        {{ completed_reservations | tojson }},
-                        {{ cancelled_reservations | tojson }}
-                    ],
+                    data: [pendingReservations, activeReservations, completedReservations, cancelledReservations],
                     backgroundColor: [
                         'rgba(23, 162, 184, 0.8)', // info - teal
                         'rgba(0, 123, 255, 0.8)', // primary - blue
@@ -258,14 +259,17 @@
         });
 
         // --- Chart 3: Daily Bookings Trend (Line Chart) ---
+        const dailyReservationLabels = JSON.parse('{{ daily_reservation_labels | tojson }}'); // These are already arrays
+        const dailyReservationCounts = JSON.parse('{{ daily_reservation_counts | tojson }}'); // These are already arrays
+
         var dailyBookingsCtx = document.getElementById('dailyBookingsChart').getContext('2d');
         var dailyBookingsChart = new Chart(dailyBookingsCtx, {
             type: 'line',
             data: {
-                labels: {{ daily_reservation_labels | tojson }}, // e.g., ['Jun 26', 'Jun 27', ...]
+                labels: dailyReservationLabels,
                 datasets: [{
                     label: 'Bookings',
-                    data: {{ daily_reservation_counts | tojson }}, // e.g., [5, 8, 3, ...]
+                    data: dailyReservationCounts,
                     backgroundColor: 'rgba(0, 123, 255, 0.5)',
                     borderColor: 'rgba(0, 123, 255, 1)',
                     borderWidth: 2,
@@ -309,4 +313,4 @@
 
     });
 </script>
-{% endblock %}
+{% endblock scripts %}

@@ -60,7 +60,7 @@ main {
     font-weight: bold;
 }
 
-/* Ensure forms are not too wide on large screens */
+/* Ensure forms are not too wide on large screens
 .form-control {
     /* max-width: 400px; */ /* Uncomment if you want to restrict width of all form inputs */
-} 
+/* }   */

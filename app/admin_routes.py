@@ -2,11 +2,10 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import current_user, login_required
 from functools import wraps
 from .forms import ParkingLotForm
-# Ensure all models are imported
 from .models import ParkingLot, ParkingSpot, User, Reservation 
 from . import db
 import datetime # Import datetime module
-from sqlalchemy import func # Import func for database functions like DATE
+from sqlalchemy import func 
 
 bp = Blueprint('admin_routes', __name__)
 

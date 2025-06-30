@@ -29,11 +29,9 @@
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_routes.list_parking_lots') }}">Manage Lots</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_routes.list_users') }}">View Users</a></li>
                         {% else %}
-                            {# User Links (Corrected) #}
+                            {# Users #}
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('user_routes.dashboard') }}">User Dashboard</a></li>
-                            {# The 'Book Parking' action typically starts from the dashboard by selecting a lot.
-                               So, linking it to the dashboard is appropriate for a general "book" entry point. #}
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('user_routes.dashboard') }}">Book Parking</a></li> 
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('user_routes.dashboard') }}#search-lot">Book Parking</a></li>
                         {% endif %}
                     {% endif %}
                 </ul>

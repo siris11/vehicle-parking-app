@@ -123,12 +123,12 @@
 </div>
 
     {# 2. Search Parking Lots #}
-    <div class="card mb-4 shadow-sm">
+    <div class="card mb-4 shadow-sm" id="search-lot">
         <div class="card-header bg-primary text-white">
             <h4 class="mb-0">Search Parking Lots</h4>
         </div>
         <div class="card-body">
-            <form method="POST" action="{{ url_for('user_routes.dashboard') }}" class="row g-3 align-items-center">
+            <form method="GET" action="{{ url_for('user_routes.dashboard') }}#search-lot" class="row g-3 align-items-center">
                 <div class="col-auto flex-grow-1">
                     <label for="search_term" class="visually-hidden">Search by Name, Address, or Pin Code</label>
                     <input type="text" class="form-control" id="search_term" name="search_term" placeholder="Enter Name, Address, or Pin Code" value="{{ search_term if search_term }}">
@@ -144,7 +144,7 @@
     </div>
 
     {# Available Parking Lots (Display Search Results or All) #}
-    <div class="card mb-4 shadow-sm">
+    <div class="card mb-4 shadow-sm" id="parking-lots-results">
         <div class="card-header bg-primary text-white">
             <h4 class="mb-0">{{ 'Search Results' if search_term else 'Available Parking Lots' }}</h4>
         </div>
@@ -263,8 +263,9 @@
         }
 
         // 1. Parking Cost Chart Data & Options
-        // Ensure that `parking_cost_chart_data` is passed from your Flask route
-        const parkingCostRawData = {{ parking_cost_chart_data|tojson }} || [];
+        // Ensure that `parking_cost_chart_data` is passed from Flask route
+        const parkingCostRawData = JSON.parse('{{ parking_cost_chart_data|tojson }}');
+        
         const parkingCostChartData = {
             labels: parkingCostRawData.map(row => row[0]),
             datasets: [{
@@ -315,7 +316,7 @@
 
         // 2. Parking Frequency Chart Data & Options
         // Ensure that `parking_frequency_data` is passed from your Flask route
-        const parkingFrequencyRawData = {{ parking_frequency_data|tojson }} || [];
+        const parkingFrequencyRawData = JSON.parse('{{ parking_frequency_data|tojson }}');
         const parkingFrequencyChartData = {
             labels: parkingFrequencyRawData.map(row => row[0]),
             datasets: [{
@@ -350,7 +351,7 @@
 
         // 3. Most Visited Lots Chart Data & Options
         // Ensure that `most_visited_lots_data` is passed from your Flask route
-        const mostVisitedLotsRawData = {{ most_visited_lots_data|tojson }} || [];
+        const mostVisitedLotsRawData = JSON.parse('{{ most_visited_lots_data|tojson }}');
         const mostVisitedLotsChartData = {
             labels: mostVisitedLotsRawData.map(row => row[0]),
             datasets: [{
