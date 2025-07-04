@@ -4,7 +4,7 @@ from functools import wraps
 from .forms import ParkingLotForm
 from .models import ParkingLot, ParkingSpot, User, Reservation 
 from . import db
-import datetime # Import datetime module
+import datetime 
 from sqlalchemy import func 
 
 bp = Blueprint('admin_routes', __name__)

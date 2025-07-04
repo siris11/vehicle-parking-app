@@ -60,7 +60,6 @@ def create_app(config_class=None):
     # CREATE DATABASE TABLES ON APP STARTUP
 
     with app.app_context():
-        # Import models here to ensure they are loaded when db.create_all() is called
         from . import models
         db.create_all()
 

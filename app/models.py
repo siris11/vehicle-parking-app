@@ -57,21 +57,13 @@ class Reservation(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     vehicle_number = db.Column(db.String(20), nullable=False) 
     booking_timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False) # When the reservation was made
-
-    # Timestamp when the user actually checks in (parks the car)
     check_in_timestamp = db.Column(db.DateTime, nullable=True)
-
-    # leaving_timestamp to check_out_timestamp
     check_out_timestamp = db.Column(db.DateTime, nullable=True)
-
-    # Renamed parking_cost to total_cost
     total_cost = db.Column(db.Float, nullable=True)
-
     # Status for the reservation itself: 'pending', 'active', 'completed', 'cancelled'
     status = db.Column(db.String(20), default='pending', nullable=False)
 
     # The 'tenant' backref from User model connects to user_id
     # The 'parking_spot' backref from ParkingSpot model connects to spot_id
-
     def __repr__(self):
         return f'<Reservation {self.id} | Spot {self.parking_spot.spot_number if self.parking_spot else self.spot_id} | User {self.tenant.username if self.tenant else self.user_id} | Status: {self.status}>'
