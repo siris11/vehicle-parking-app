@@ -1,7 +1,7 @@
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
-from . import db
+from app import db
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -23,11 +23,12 @@ class User(UserMixin, db.Model):
 
 class ParkingLot(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(128), nullable=False, unique=True) # prime_location_name
-    address = db.Column(db.String(255))
-    pin_code = db.Column(db.String(10))
-    price_per_hour = db.Column(db.Float, nullable=False) # Price
-    maximum_capacity = db.Column(db.Integer, nullable=False) # maximum_number_of_spots
+    name = db.Column(db.String(128), nullable=False, unique=True) 
+    address = db.Column(db.String(255),nullable=False)
+    pin_code = db.Column(db.String(10),nullable=False)
+    price_per_hour = db.Column(db.Float, nullable=False)
+    maximum_capacity = db.Column(db.Integer, nullable=False) 
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
     spots = db.relationship('ParkingSpot', backref='parking_lot', lazy='dynamic', cascade="all, delete-orphan")
 
     def __repr__(self):
@@ -37,15 +38,12 @@ class ParkingSpot(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     spot_number = db.Column(db.String(20), nullable=False)
     lot_id = db.Column(db.Integer, db.ForeignKey('parking_lot.id'), nullable=False)
-    status = db.Column(db.String(20), default='Available', nullable=False) # 'Available', 'Reserved', 'Occupied'
+    status = db.Column(db.String(20), default='Available', nullable=False) 
     spot_reservations = db.relationship('Reservation', backref='parking_spot', lazy='dynamic')
 
     __table_args__ = (db.UniqueConstraint('lot_id', 'spot_number', name='_lot_spot_uc'),)
 
-    # This method might need to be updated to check Reservation.status == 'active'
     def get_active_reservation(self):
-        """Returns the active reservation for this spot, if any."""
-        # An active reservation is one where status is 'active' (car is parked)
         return self.spot_reservations.filter_by(status='active').first()
 
     def __repr__(self):
@@ -53,17 +51,17 @@ class ParkingSpot(db.Model):
 
 class Reservation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    spot_id = db.Column(db.Integer, db.ForeignKey('parking_spot.id'), nullable=False)
+    spot_id = db.Column(db.Integer, db.ForeignKey('parking_spot.id', ondelete='SET NULL'), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     vehicle_number = db.Column(db.String(20), nullable=False) 
-    booking_timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False) # When the reservation was made
+    booking_timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     check_in_timestamp = db.Column(db.DateTime, nullable=True)
     check_out_timestamp = db.Column(db.DateTime, nullable=True)
     total_cost = db.Column(db.Float, nullable=True)
-    # Status for the reservation itself: 'pending', 'active', 'completed', 'cancelled'
+    #'pending', 'active', 'completed', 'cancelled'
     status = db.Column(db.String(20), default='pending', nullable=False)
 
-    # The 'tenant' backref from User model connects to user_id
-    # The 'parking_spot' backref from ParkingSpot model connects to spot_id
     def __repr__(self):
-        return f'<Reservation {self.id} | Spot {self.parking_spot.spot_number if self.parking_spot else self.spot_id} | User {self.tenant.username if self.tenant else self.user_id} | Status: {self.status}>'
+        spot_info = self.parking_spot.spot_number if self.parking_spot else f"Deleted Spot (ID: {self.spot_id})"
+        user_info = self.tenant.username if self.tenant else f"User ID: {self.user_id}"
+        return f'<Reservation {self.id} | Spot {spot_info} | User {user_info} | Status: {self.status}>'

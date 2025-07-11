@@ -11,15 +11,15 @@
 <div class="row">
     <div class="col-md-8 col-lg-6">
         {# Determine action URL based on whether it's a create or edit form #}
-        {% set action_url = url_for('admin_routes.create_parking_lot') %}
+        {% set action_url = url_for('admin.create_parking_lot') %}
         {% if form.name.data and lot %} {# 'lot' object passed only during edit #}
-            {% set action_url = url_for('admin_routes.edit_parking_lot', lot_id=lot.id) %}
+            {% set action_url = url_for('admin.edit_parking_lot', lot_id=lot.id) %}
         {% endif %}
         
         {{ render_form(form, action=action_url, method='post', novalidate=True) }}
         
         <div class="mt-3">
-            <a href="{{ url_for('admin_routes.list_parking_lots') }}" class="btn btn-outline-secondary">Cancel</a>
+            <a href="{{ url_for('admin.list_parking_lots') }}" class="btn btn-outline-secondary">Cancel</a>
         </div>
     </div>
 </div>
@@ -28,14 +28,11 @@
     <hr class="my-4">
     <h3 class="h4">Current Spots in {{lot.name }} ({{ lot.spots.count() }} total)</h3>
     <p class="text-muted">
-        Editing spot details individually is not done here. Capacity changes will add/remove available spots automatically.
-        To reduce capacity, ensure enough spots are free and have no active/pending reservations.
     </p>
     <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 g-2 mb-3">
         {% for spot in lot.spots.order_by(ParkingSpot.spot_number).all() %}
             <div class="col">
                 <div class="card h-100 text-center 
-                    {# MODIFIED: Use full status names for styling #}
                     {% if spot.status == 'Occupied' %}bg-danger text-white
                     {% elif spot.status == 'Reserved' %}bg-warning text-dark
                     {% elif spot.status == 'Available' %}bg-success text-white {# Changed to bg-success for clearer 'Available' #}
@@ -45,13 +42,11 @@
                     <div class="card-body p-2">
                         <h6 class="card-title mb-0">{{ spot.spot_number }}</h6>
                         <small class="
-                            {# MODIFIED: Text color adjustment for dark backgrounds #}
                             {% if spot.status == 'Occupied' or spot.status == 'Available' %}text-white-50
                             {% elif spot.status == 'Reserved' %}text-dark
                             {% else %}text-muted{# Fallback for other statuses #}
                             {% endif %}
                         ">
-                            {# MODIFIED: Display full status string directly #}
                             {{ spot.status }}
                         </small>
                     </div>

@@ -10,7 +10,7 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">Admin Dashboard</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="{{ url_for('admin_routes.create_parking_lot') }}" class="btn btn-sm btn-outline-primary">
+        <a href="{{ url_for('admin.create_parking_lot') }}" class="btn btn-sm btn-outline-primary">
             <span data-feather="plus-circle" class="align-text-bottom"></span>
             Create New Parking Lot
         </a>
@@ -131,7 +131,7 @@
         <tbody>
             {% for lot in lots %}
             <tr>
-                <td><a href="{{ url_for('admin_routes.view_lot_spots', lot_id=lot.id) }}">{{ lot.name }}</a></td>
+                <td><a href="{{ url_for('admin.view_lot_spots', lot_id=lot.id) }}">{{ lot.name }}</a></td>
                 <td>{{ lot.address if lot.address else 'N/A' }}</td>
                 <td>{{ lot.maximum_capacity }}</td>
                 <td><span class="badge bg-danger">{{ lot.spots.filter_by(status='Occupied').count() }}</span></td>
@@ -139,13 +139,13 @@
                 <td><span class="badge bg-success">{{ lot.spots.filter_by(status='Available').count() }}</span></td>
                 <td>₹{{ "%.2f"|format(lot.price_per_hour) }}</td>
                 <td>
-                    <a href="{{ url_for('admin_routes.edit_parking_lot', lot_id=lot.id) }}" class="btn btn-sm btn-outline-secondary me-1">Edit</a>
-                    <a href="{{ url_for('admin_routes.view_lot_spots', lot_id=lot.id) }}" class="btn btn-sm btn-outline-info">View Spots</a>
+                    <a href="{{ url_for('admin.edit_parking_lot', lot_id=lot.id) }}" class="btn btn-sm btn-outline-secondary me-1">Edit</a>
+                    <a href="{{ url_for('admin.view_lot_spots', lot_id=lot.id) }}" class="btn btn-sm btn-outline-info">View Spots</a>
                 </td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="8" class="text-center">No parking lots found. <a href="{{ url_for('admin_routes.create_parking_lot') }}">Create one now!</a></td>
+                <td colspan="8" class="text-center">No parking lots found. <a href="{{ url_for('admin.create_parking_lot') }}">Create one now!</a></td>
             </tr>
             {% endfor %}
         </tbody>

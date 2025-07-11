@@ -24,12 +24,12 @@
             {% for user_item in users %}
             <tr>
                 <td>{{ user_item.id }}</td>
-                <td><a href="{{ url_for('admin_routes.user_details', user_id=user_item.id) }}">{{ user_item.username }}</a></td>
+                <td><a href="{{ url_for('admin.user_details', user_id=user_item.id) }}">{{ user_item.username }}</a></td>
                 <td>{{ user_item.full_name if user_item.full_name else 'N/A' }}</td> {# NEW FIELD #}
                 <td>{{ user_item.email }}</td>
                 <td>{{ user_item.reservations.count() }}</td>
                 <td>
-                    <a href="{{ url_for('admin_routes.user_details', user_id=user_item.id) }}" class="btn btn-sm btn-outline-info">View Details</a> 
+                    <a href="{{ url_for('admin.user_details', user_id=user_item.id) }}" class="btn btn-sm btn-outline-info">View Details</a> 
                     {# Add other actions like disable user if needed #}
                 </td>
             </tr>

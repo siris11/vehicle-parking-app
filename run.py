@@ -17,7 +17,7 @@ if __name__ == '__main__':
             # Create a default admin user if none exists
             new_admin = User(
                 username=default_admin_username, 
-                full_name='Administrator',
+                full_name='Admin',
                 email='root@parknxt.com', 
                 password_hash=generate_password_hash(default_admin_password), 
                 is_admin=True

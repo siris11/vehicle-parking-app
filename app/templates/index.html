@@ -6,7 +6,7 @@
 {% block content %}
 <div class="px-4 py-5 my-5 text-center">
     <img class="d-block mx-auto mb-4" src="{{ url_for('static', filename='images/parking_logo.png') }}" alt="ParkNxt Logo" width="120" height="120">
-    <h1 class="display-5 fw-bold">Vehicle Parking Management</h1>
+    <h1 class="display-5 fw-bold">Parking Management Application</h1>
     <div class="col-lg-6 mx-auto">
         <p class="lead mb-4">Quickly and easily manage your parking lots, book spots, and view availability. Login or register to continue.</p>
         <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
@@ -14,10 +14,9 @@
                 <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg px-4 gap-3">Login</a>
                 <a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary btn-lg px-4">Register</a>
             {% elif current_user.is_admin %}
-                <a href="{{ url_for('admin_routes.dashboard') }}" class="btn btn-success btn-lg px-4">Go to Admin Dashboard</a>
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-success btn-lg px-4">Go to Admin Dashboard</a>
             {% else %}
-                {# Corrected link for User Dashboard #}
-                <a href="{{ url_for('user_routes.dashboard') }}" class="btn btn-success btn-lg px-4">Go to User Dashboard</a>
+                <a href="{{ url_for('user.dashboard') }}" class="btn btn-success btn-lg px-4">Go to User Dashboard</a>
             {% endif %}
         </div>
     </div>

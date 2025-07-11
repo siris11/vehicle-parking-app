@@ -1,13 +1,13 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import current_user, login_required
 from functools import wraps
-from .forms import ParkingLotForm
+from .forms import ParkingLotForm, EditProfileForm, ChangePasswordForm
 from .models import ParkingLot, ParkingSpot, User, Reservation 
 from . import db
 import datetime 
 from sqlalchemy import func 
 
-bp = Blueprint('admin_routes', __name__)
+bp = Blueprint('admin', __name__)
 
 # Decorator to ensure user is admin
 def admin_required(f):
@@ -98,20 +98,19 @@ def create_parking_lot():
             address=form.address.data,
             pin_code=form.pin_code.data,
             price_per_hour=form.price_per_hour.data,
-            maximum_capacity=form.maximum_capacity.data
+            maximum_capacity=form.maximum_capacity.data,
+            is_active = True
         )
         db.session.add(new_lot)
-        db.session.flush() # Get the ID for the new_lot
-
-        # Create parking spots for the lot
+        db.session.flush() # ID 
         for i in range(1, form.maximum_capacity.data + 1):
-            spot_number = f"S{i:03d}" 
+            spot_number = f"A{i:03d}" 
             spot = ParkingSpot(spot_number=spot_number, lot_id=new_lot.id, status='Available')
             db.session.add(spot)
         
         db.session.commit()
         flash(f'Parking lot \'{new_lot.name}\' created successfully with {new_lot.maximum_capacity} spots!', 'success')
-        return redirect(url_for('admin_routes.list_parking_lots'))
+        return redirect(url_for('admin.list_parking_lots'))
     return render_template('admin/create_edit_parking_lot.html', form=form, title='Create Parking Lot', legend='New Parking Lot') 
 
 @bp.route('/parking_lot/edit/<int:lot_id>', methods=['GET', 'POST'])
@@ -120,68 +119,67 @@ def create_parking_lot():
 def edit_parking_lot(lot_id):
     lot = ParkingLot.query.get_or_404(lot_id)
     form = ParkingLotForm(obj=lot)
-    form._original_name = lot.name # Store original name for validation
+    form._original_name = lot.name 
 
     if form.validate_on_submit():
         original_capacity = lot.maximum_capacity
         new_capacity = form.maximum_capacity.data
-
-        # Prevent increasing maximum_capacity
-        if new_capacity > original_capacity:
-            flash(f'Cannot increase the maximum capacity of parking lot \'{lot.name}\'. Physical expansion is not supported via this interface.', 'danger')
-            return redirect(url_for('admin_routes.edit_parking_lot', lot_id=lot.id))
-
-        # Update other fields first
+       
         lot.name = form.name.data
         lot.address = form.address.data
         lot.pin_code = form.pin_code.data
         lot.price_per_hour = form.price_per_hour.data
-
-        # Logic for decreasing capacity
-        if new_capacity < original_capacity:
-            spots_to_remove_count = original_capacity - new_capacity
-            
-            truly_available_spots_query = ParkingSpot.query.filter(
-                ParkingSpot.lot_id == lot.id,
-                ParkingSpot.status == 'Available'
-            ).order_by(ParkingSpot.spot_number.desc())
-
-            truly_available_spots = []
-            for spot_candidate in truly_available_spots_query:
-                active_or_pending_reservation = Reservation.query.filter(
-                    Reservation.spot_id == spot_candidate.id,
-                    Reservation.status.in_(['pending', 'active'])
-                ).first()
-                if not active_or_pending_reservation:
-                    truly_available_spots.append(spot_candidate)
-                
-                if len(truly_available_spots) >= spots_to_remove_count:
-                    break
-
-            if len(truly_available_spots) < spots_to_remove_count:
-                flash(f'Cannot reduce capacity by {spots_to_remove_count} spots. Only {len(truly_available_spots)} truly available spots can be removed. Please ensure spots are free and have no active or pending reservations.', 'danger')
-                db.session.rollback()
-                return redirect(url_for('admin_routes.edit_parking_lot', lot_id=lot.id))
-            else:
-                for i in range(spots_to_remove_count):
-                    spot_to_remove = truly_available_spots[i]
-                    db.session.delete(spot_to_remove)
-                flash(f'Reduced capacity. {spots_to_remove_count} spots removed.', 'info')
         
-        lot.maximum_capacity = new_capacity 
+        #Add spots
+        if new_capacity > original_capacity:
+            add_spots = new_capacity - original_capacity
+            last_present_spot = db.session.query(func.max(ParkingSpot.spot_number)).filter_by(lot_id=lot.id).scalar()
+            
+            start_from_number = 1
+            if last_present_spot:
+                try:
+                    numeric_part = int(last_present_spot.lstrip('A'))
+                    start_from_number = numeric_part + 1
+                except (ValueError, TypeError):
+                    print(f"Warning: Could not parse spot number '{last_present_spot}'. Starts from 1.")
+
+            for i in range(start_from_number, start_from_number + add_spots):
+                spot_number = f"A{i:03d}"
+                spot = ParkingSpot(spot_number=spot_number, lot_id=lot.id, status='Available')
+                db.session.add(spot)
+            flash(f'Capacity increased. {add_spots} new spots added.', 'success')
+
+        #Decrease
+        elif new_capacity < original_capacity:
+            delete_spots = original_capacity - new_capacity
+
+            spots_to_delete = ParkingSpot.query.filter(
+                ParkingSpot.lot_id == lot.id,
+                ParkingSpot.status == 'Available',
+                ~ParkingSpot.spot_reservations.any(Reservation.status.in_(['pending', 'active']))
+            ).order_by(ParkingSpot.spot_number.desc()).limit(delete_spots).all()
+
+            if len(spots_to_delete) < delete_spots:
+                flash(f'Cannot reduce capacity by {delete_spots} spots. Only {len(spots_to_delete)} truly available spots can be removed. Please ensure spots are free and have no active or pending reservations.', 'danger')
+                db.session.rollback()
+                return redirect(url_for('admin.edit_parking_lot', lot_id=lot.id))
+            else:
+                for spot_to_delete in spots_to_delete:
+                    db.session.delete(spot_to_delete)
+                flash(f'Reduced capacity. {delete_spots} spots removed.', 'info')
+
+        lot.maximum_capacity = new_capacity
         db.session.commit()
         flash(f'Parking lot \'{lot.name}\' updated successfully!', 'success')
-        return redirect(url_for('admin_routes.list_parking_lots'))
-    
-    return render_template('admin/create_edit_parking_lot.html', form=form, title='Edit Parking Lot', legend=f'Edit {lot.name}', lot=lot, ParkingSpot=ParkingSpot) 
+        return redirect(url_for('admin.list_parking_lots'))
+
+    return render_template('admin/create_edit_parking_lot.html', form=form, title='Edit Parking Lot', legend=f'Edit {lot.name}', lot=lot, ParkingSpot=ParkingSpot)
 
 @bp.route('/parking_lot/delete/<int:lot_id>', methods=['POST'])
 @login_required
 @admin_required
 def delete_parking_lot(lot_id):
     lot = ParkingLot.query.get_or_404(lot_id)
-    
-    # Check for 'Occupied' or 'Reserved' spots
     occupied_or_reserved_spots = ParkingSpot.query.filter(
         ParkingSpot.lot_id == lot.id,
         ParkingSpot.status.in_(['Occupied', 'Reserved'])
@@ -189,10 +187,8 @@ def delete_parking_lot(lot_id):
 
     if occupied_or_reserved_spots > 0:
         flash(f'Cannot delete parking lot \'{lot.name}\'. It has occupied or reserved spots.', 'danger')
-        return redirect(url_for('admin_routes.list_parking_lots'))
+        return redirect(url_for('admin.list_parking_lots'))
     
-    # Also double-check for any active/pending reservations, even if spot status is 'Available'
-    # This is a more robust check directly on the Reservation model
     active_or_pending_reservations_in_lot = Reservation.query.join(ParkingSpot).filter(
         ParkingSpot.lot_id == lot.id,
         Reservation.status.in_(['pending', 'active'])
@@ -200,13 +196,13 @@ def delete_parking_lot(lot_id):
 
     if active_or_pending_reservations_in_lot > 0:
         flash(f'Cannot delete parking lot \'{lot.name}\'. It has active or pending reservations.', 'danger')
-        return redirect(url_for('admin_routes.list_parking_lots'))
+        return redirect(url_for('admin.list_parking_lots'))
 
     lot_name = lot.name
     db.session.delete(lot)
     db.session.commit()
     flash(f'Parking lot \'{lot_name}\' and its spots have been deleted.', 'success')
-    return redirect(url_for('admin_routes.list_parking_lots'))
+    return redirect(url_for('admin.list_parking_lots'))
 
 @bp.route('/view_spots/<int:lot_id>')
 @login_required
@@ -214,7 +210,6 @@ def delete_parking_lot(lot_id):
 def view_lot_spots(lot_id):
     lot = ParkingLot.query.get_or_404(lot_id)
     spots = lot.spots.order_by(ParkingSpot.spot_number).all()
-    # Pass the Reservation model to the template
     return render_template('admin/view_lot_spots.html', lot=lot, spots=spots, title=f'Spots in {lot.name}', Reservation=Reservation)
 
 
@@ -228,37 +223,44 @@ def view_spot_details(spot_id):
         status='active' 
     ).first()
 
-    # Pass the Reservation model class to the template
     return render_template('admin/view_spot_details.html', spot=spot, reservation=reservation, title=f'Details for Spot {spot.spot_number}', Reservation=Reservation) 
 
 @bp.route('/spot/delete/<int:spot_id>', methods=['POST'])
 @login_required
 @admin_required
 def delete_spot(spot_id):
-    spot = ParkingSpot.query.get_or_404(spot_id)
-    lot = spot.parking_lot 
-
-    if spot.status in ['Occupied', 'Reserved']:
-        flash(f'Spot {spot.spot_number} in lot {lot.name} is {spot.status.lower()} and cannot be deleted.', 'danger')
-        return redirect(url_for('admin_routes.view_lot_spots', lot_id=lot.id))
-
-    active_or_pending_reservation = Reservation.query.filter(
-        Reservation.spot_id == spot.id,
-        Reservation.status.in_(['active', 'pending'])
-    ).first()
-    if active_or_pending_reservation:
-        flash(f'Spot {spot.spot_number} in lot {lot.name} has an active or pending reservation and cannot be deleted.', 'danger')
-        return redirect(url_for('admin_routes.view_lot_spots', lot_id=lot.id))
-
-    spot_number_deleted = spot.spot_number
-    db.session.delete(spot)
+    flash('Direct deletion of individual parking spots is not allowed', 'danger')
     
-    if lot.maximum_capacity > 0:
-        lot.maximum_capacity -= 1
+    spot = ParkingSpot.query.get(spot_id)
+    if spot:
+        return redirect(url_for('admin.view_lot_spots', lot_id=spot.lot_id))
+    else:
+        return redirect(url_for('admin.list_parking_lots'))
+# def delete_spot(spot_id):
+#     spot = ParkingSpot.query.get_or_404(spot_id)
+#     lot = spot.parking_lot 
+
+#     if spot.status in ['Occupied', 'Reserved']:
+#         flash(f'Spot {spot.spot_number} in lot {lot.name} is {spot.status.lower()} and cannot be deleted.', 'danger')
+#         return redirect(url_for('admin.view_lot_spots', lot_id=lot.id))
+
+#     active_or_pending_reservation = Reservation.query.filter(
+#         Reservation.spot_id == spot.id,
+#         Reservation.status.in_(['active', 'pending'])
+#     ).first()
+#     if active_or_pending_reservation:
+#         flash(f'Spot {spot.spot_number} in lot {lot.name} has an active or pending reservation and cannot be deleted.', 'danger')
+#         return redirect(url_for('admin.view_lot_spots', lot_id=lot.id))
+
+#     spot_number_deleted = spot.spot_number
+#     db.session.delete(spot)
     
-    db.session.commit()
-    flash(f'Parking spot {spot_number_deleted} in lot {lot.name} has been deleted. Lot capacity adjusted.', 'success')
-    return redirect(url_for('admin_routes.view_lot_spots', lot_id=lot.id))
+#     if lot.maximum_capacity > 0:
+#         lot.maximum_capacity -= 1
+    
+#     db.session.commit()
+#     flash(f'Parking spot {spot_number_deleted} in lot {lot.name} has been deleted. Lot capacity adjusted.', 'success')
+#     return redirect(url_for('admin.view_lot_spots', lot_id=lot.id))
 
 
 @bp.route('/users')
@@ -280,3 +282,44 @@ def user_details(user_id):
                             user=user, 
                             reservations=reservations,
                             title=f'Details for {user.full_name}')
+
+@bp.route('/edit_profile', methods=['GET', 'POST'])
+@login_required
+@admin_required 
+def edit_profile():
+    form = EditProfileForm(original_username=current_user.username, original_email=current_user.email)
+
+    if request.method == 'GET':
+        form.username.data = current_user.username
+        form.email.data = current_user.email
+        form.full_name.data = current_user.full_name
+
+    if form.validate_on_submit():
+        try:
+            current_user.username = form.username.data
+            current_user.email = form.email.data
+            current_user.full_name = form.full_name.data
+            db.session.commit()
+            flash('Your profile has been updated successfully!', 'success')
+            return redirect(url_for('admin.dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'An error occurred while updating your profile: {e}', 'danger')
+
+    return render_template('user/edit_profile.html', title='Edit Admin Profile', form=form) # Re-use user template
+
+@bp.route('/change_password', methods=['GET', 'POST'])
+@login_required
+@admin_required 
+def change_password():
+    form = ChangePasswordForm()
+    if form.validate_on_submit():
+        try:
+            current_user.set_password(form.new_password.data)
+            db.session.commit()
+            flash('Your password has been changed successfully!', 'success')
+            return redirect(url_for('admin.dashboard')) # Redirect back to admin dashboard
+        except Exception as e:
+            db.session.rollback()
+            flash(f'An error occurred while changing your password: {e}', 'danger')
+    return render_template('user/change_password.html', title='Change Admin Password', form=form) # Re-use user template

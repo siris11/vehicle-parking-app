@@ -7,7 +7,7 @@ from . import db
 from sqlalchemy import or_ 
 from werkzeug.security import generate_password_hash, check_password_hash 
 
-bp = Blueprint('user_routes', __name__)
+bp = Blueprint('user', __name__)
 
 @bp.route('/dashboard', methods=['GET', 'POST']) # Allow POST for search form
 @login_required
@@ -106,7 +106,7 @@ def book_spot(lot_id):
 
     if not available_spot:
         flash(f'No available spots found in {lot.name} at the moment. Please try another lot or wait for a spot to clear.', 'danger')
-        return redirect(url_for('user_routes.dashboard'))
+        return redirect(url_for('user.dashboard'))
 
     if form.validate_on_submit():
         try:
@@ -123,7 +123,7 @@ def book_spot(lot_id):
             db.session.commit()
             
             flash(f'Spot {available_spot.spot_number} in {lot.name} has been successfully reserved for vehicle {form.vehicle_number.data}! Please check in when you arrive.', 'success')
-            return redirect(url_for('user_routes.dashboard')) 
+            return redirect(url_for('user.dashboard')) 
         except Exception as e:
             db.session.rollback()
             flash(f'An error occurred while booking the spot: {e}', 'danger')
@@ -142,16 +142,16 @@ def check_in_reservation(reservation_id):
 
     if reservation.user_id != current_user.id:
         flash('You do not have permission to check into this reservation.', 'danger')
-        return redirect(url_for('user_routes.dashboard'))
+        return redirect(url_for('user.dashboard'))
     
     if reservation.status != 'pending':
         flash('This reservation is not in a pending state and cannot be checked in.', 'danger')
-        return redirect(url_for('user_routes.dashboard'))
+        return redirect(url_for('user.dashboard'))
 
     spot = reservation.parking_spot
     if spot.status != 'Reserved' or reservation.spot_id != spot.id:
         flash('The parking spot status does not match the reservation status.', 'danger')
-        return redirect(url_for('user_routes.dashboard'))
+        return redirect(url_for('user.dashboard'))
 
     try:
         reservation.status = 'active' 
@@ -165,7 +165,7 @@ def check_in_reservation(reservation_id):
         db.session.rollback()
         flash(f'An error occurred during check-in: {e}', 'danger')
     
-    return redirect(url_for('user_routes.dashboard'))
+    return redirect(url_for('user.dashboard'))
 
 @bp.route('/park_out_page/<int:reservation_id>', methods=['GET']) # Route to display the park-out confirmation page
 @login_required
@@ -174,11 +174,11 @@ def park_out_page(reservation_id):
 
     if reservation.user_id != current_user.id:
         flash('You do not have permission to view this park out page.', 'danger')
-        return redirect(url_for('user_routes.dashboard'))
+        return redirect(url_for('user.dashboard'))
     
     if reservation.status != 'active':
         flash('This reservation is not in an active state.', 'danger')
-        return redirect(url_for('user_routes.dashboard'))
+        return redirect(url_for('user.dashboard'))
 
     # Calculate estimated cost and duration for display on the page
     estimated_duration_string = "N/A"
@@ -215,18 +215,18 @@ def park_out_action(reservation_id):
 
     if reservation.user_id != current_user.id:
         flash('You do not have permission to park out from this reservation.', 'danger')
-        return redirect(url_for('user_routes.dashboard'))
+        return redirect(url_for('user.dashboard'))
     
     if reservation.status != 'active':
         flash('This reservation is not in an active state and cannot be parked out.', 'danger')
-        return redirect(url_for('user_routes.dashboard'))
+        return redirect(url_for('user.dashboard'))
 
     spot = reservation.parking_spot
     parking_lot = spot.parking_lot
 
     if spot.status != 'Occupied' or reservation.spot_id != spot.id:
         flash('The parking spot status does not match the reservation status. Please contact support.', 'danger')
-        return redirect(url_for('user_routes.dashboard'))
+        return redirect(url_for('user.dashboard'))
 
     try:
         reservation.check_out_timestamp = datetime.utcnow()
@@ -252,7 +252,7 @@ def park_out_action(reservation_id):
         db.session.rollback()
         flash(f'An error occurred during park-out: {e}', 'danger')
     
-    return redirect(url_for('user_routes.dashboard'))
+    return redirect(url_for('user.dashboard'))
 
 @bp.route('/cancel_reservation/<int:reservation_id>', methods=['POST'])
 @login_required
@@ -261,11 +261,11 @@ def cancel_reservation(reservation_id):
 
     if reservation.user_id != current_user.id:
         flash('You do not have permission to cancel this reservation.', 'danger')
-        return redirect(url_for('user_routes.dashboard'))
+        return redirect(url_for('user.dashboard'))
     
     if reservation.status != 'pending':
         flash('This reservation cannot be cancelled. It is either active or already completed/cancelled.', 'danger')
-        return redirect(url_for('user_routes.dashboard'))
+        return redirect(url_for('user.dashboard'))
     
     try:
         spot = reservation.parking_spot
@@ -281,7 +281,7 @@ def cancel_reservation(reservation_id):
         db.session.rollback()
         flash(f'An error occurred while cancelling the reservation: {e}', 'danger')
     
-    return redirect(url_for('user_routes.dashboard'))
+    return redirect(url_for('user.dashboard'))
 
 @bp.route('/edit_profile', methods=['GET', 'POST'])
 @login_required
@@ -304,10 +304,10 @@ def edit_profile():
             flash('Your profile has been updated successfully!', 'success')
             if current_user.is_admin:
                 # Redirect admin to the admin dashboard
-                return redirect(url_for('admin_routes.dashboard'))
+                return redirect(url_for('admin.dashboard'))
             else:
                 # Redirect regular user to their dashboard
-                return redirect(url_for('user_routes.dashboard'))
+                return redirect(url_for('user.dashboard'))
     
         except Exception as e:
             db.session.rollback()
@@ -327,10 +327,10 @@ def change_password():
             flash('Your password has been changed successfully!', 'success')
             if current_user.is_admin:
                 # Redirect admin to the admin dashboard
-                return redirect(url_for('admin_routes.dashboard'))
+                return redirect(url_for('admin.dashboard'))
             else:
                 # Redirect regular user to their dashboard
-                return redirect(url_for('user_routes.dashboard'))
+                return redirect(url_for('user.dashboard'))
         except Exception as e:
             db.session.rollback()
             flash(f'An error occurred while changing your password: {e}', 'danger')

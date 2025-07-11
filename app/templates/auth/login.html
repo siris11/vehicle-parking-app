@@ -13,7 +13,7 @@
                 <hr>
                 <p class="text-center">New User? <a href="{{ url_for('auth.register') }}">Click to Register!</a></p>
                 {# Add admin login note if needed - though admin uses same form #}
-                {% if 'admin' in request.args.get('next', '') or request.endpoint == 'admin_routes.dashboard' %}
+                {% if 'admin' in request.args.get('next', '') or request.endpoint == 'admin.dashboard' %}
                     <p class="text-center small text-muted">Default admin: admin / admin_password (change this!)</p>
                 {% endif %}
             </div>

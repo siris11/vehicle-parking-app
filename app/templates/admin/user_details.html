@@ -6,7 +6,7 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">{{ title }}</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="{{ url_for('admin_routes.list_users') }}" class="btn btn-sm btn-outline-secondary">Back to User List</a>
+        <a href="{{ url_for('admin.list_users') }}" class="btn btn-sm btn-outline-secondary">Back to User List</a>
     </div>
 </div>
 
@@ -46,11 +46,11 @@
                 <th>Spot Number</th>
                 <th>Parking Lot</th>
                 <th>Vehicle Number</th>
-                <th>Booked At</th> {# MODIFIED #}
-                <th>Check-in Time</th> {# NEW COLUMN #}
-                <th>Check-out Time</th> {# MODIFIED #}
-                <th>Status</th> {# NEW COLUMN #}
-                <th>Total Cost</th> {# MODIFIED #}
+                <th>Booked At</th> 
+                <th>Check-in Time</th> 
+                <th>Check-out Time</th> 
+                <th>Status</th> 
+                <th>Total Cost</th>
             </tr>
         </thead>
         <tbody>
@@ -59,20 +59,20 @@
                 <td>{{ reservation.id }}</td>
                 <td>
                     {% if reservation.parking_spot %}
-                        <a href="{{ url_for('admin_routes.view_spot_details', spot_id=reservation.spot_id) }}">{{ reservation.parking_spot.spot_number }}</a>
+                        <a href="{{ url_for('admin.view_spot_details', spot_id=reservation.spot_id) }}">{{ reservation.parking_spot.spot_number }}</a>
                     {% else %}
                         N/A (Spot Deleted)
                     {% endif %}
                 </td>
                 <td>
                     {% if reservation.parking_spot and reservation.parking_spot.parking_lot %}
-                        <a href="{{ url_for('admin_routes.edit_parking_lot', lot_id=reservation.parking_spot.parking_lot.id) }}">{{ reservation.parking_spot.parking_lot.name }}</a>
+                        <a href="{{ url_for('admin.edit_parking_lot', lot_id=reservation.parking_spot.parking_lot.id) }}">{{ reservation.parking_spot.parking_lot.name }}</a>
                     {% else %}
                         N/A (Lot/Spot Deleted)
                     {% endif %}
                 </td>
                 <td>{{ reservation.vehicle_number if reservation.vehicle_number else 'N/A' }}</td>
-                <td>{{ reservation.booking_timestamp.strftime('%Y-%m-%d %H:%M') }}</td> {# MODIFIED #}
+                <td>{{ reservation.booking_timestamp.strftime('%Y-%m-%d %H:%M') }}</td> 
                 <td>
                     {% if reservation.check_in_timestamp %} {# NEW #}
                         {{ reservation.check_in_timestamp.strftime('%Y-%m-%d %H:%M') }}
@@ -81,7 +81,6 @@
                     {% endif %}
                 </td>
                 <td>
-                    {% if reservation.check_out_timestamp %} {# MODIFIED #}
                         {{ reservation.check_out_timestamp.strftime('%Y-%m-%d %H:%M') }}
                     {% else %}
                         <span class="badge bg-primary text-white">{{ reservation.status | title }}</span> {# Show status if not checked out #}
@@ -102,7 +101,7 @@
                     {% endif %}
                 </td>
                 <td>
-                    {% if reservation.total_cost is not none %} {# MODIFIED #}
+                    {% if reservation.total_cost is not none %}
                         ₹{{ "%.2f"|format(reservation.total_cost) }}
                     {% else %}
                         <span class="text-muted">N/A</span> {# For pending/active bookings #}

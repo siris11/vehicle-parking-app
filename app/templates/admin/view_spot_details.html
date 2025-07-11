@@ -4,8 +4,8 @@
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">{{ title }} (Lot: <a href="{{ url_for('admin_routes.view_lot_spots', lot_id=spot.parking_lot.id) }}">{{ spot.parking_lot.name }}</a>)</h1>
-    <a href="{{ url_for('admin_routes.view_lot_spots', lot_id=spot.parking_lot.id) }}" class="btn btn-sm btn-outline-info">Back to Lot Overview</a>
+    <h1 class="h2">{{ title }} (Lot: <a href="{{ url_for('admin.view_lot_spots', lot_id=spot.parking_lot.id) }}">{{ spot.parking_lot.name }}</a>)</h1>
+    <a href="{{ url_for('admin.view_lot_spots', lot_id=spot.parking_lot.id) }}" class="btn btn-sm btn-outline-info">Back to Lot Overview</a>
 </div>
 
 <div class="card">
@@ -25,14 +25,14 @@
                 <span class="badge bg-info">{{ spot.status }}</span> {# Fallback for unexpected status #}
             {% endif %}
         </p>
-        <p><strong>Parking Lot:</strong> <a href="{{ url_for('admin_routes.view_lot_spots', lot_id=spot.parking_lot.id) }}">{{ spot.parking_lot.name }}</a></p>
+        <p><strong>Parking Lot:</strong> <a href="{{ url_for('admin.view_lot_spots', lot_id=spot.parking_lot.id) }}">{{ spot.parking_lot.name }}</a></p>
         <p><strong>Price Per Hour for this Lot:</strong> ₹{{ "%.2f"|format(spot.parking_lot.price_per_hour) }}</p>
     </div>
     {# Only allow delete if spot is Available and has no active/pending reservation #}
     {# The `delete_spot` route already checks for active/pending reservations and status #}
     {% if spot.status == 'Available' %}
     <div class="card-footer">
-        <form action="{{ url_for('admin_routes.delete_spot', spot_id=spot.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to permanently delete this spot? This will also reduce the lot capacity.');">
+        <form action="{{ url_for('admin.delete_spot', spot_id=spot.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to permanently delete this spot? This will also reduce the lot capacity.');">
             <button type="submit" class="btn btn-danger btn-sm">Delete This Spot</button>
         </form>
     </div>
@@ -46,7 +46,7 @@
             Current Reservation Details
         </div>
         <div class="card-body">
-            <p><strong>Reserved By:</strong> {{ reservation.tenant.username }} (User ID: <a href="{{ url_for('admin_routes.user_details', user_id=reservation.tenant.id) }}">{{ reservation.tenant.id }}</a>)</p>
+            <p><strong>Reserved By:</strong> {{ reservation.tenant.username }} (User ID: <a href="{{ url_for('admin.user_details', user_id=reservation.tenant.id) }}">{{ reservation.tenant.id }}</a>)</p>
             <p><strong>Full Name:</strong> {{ reservation.tenant.full_name }}</p>
             <p><strong>Email:</strong> {{ reservation.tenant.email }}</p>
             <p><strong>Check-in Timestamp:</strong> {{ reservation.check_in_timestamp.strftime('%Y-%m-%d %H:%M:%S') }} (UTC)</p>
@@ -66,7 +66,7 @@
             Pending Reservation Details
         </div>
         <div class="card-body">
-            <p><strong>Reserved By:</strong> {{ reservation.tenant.username }} (User ID: <a href="{{ url_for('admin_routes.user_details', user_id=reservation.tenant.id) }}">{{ reservation.tenant.id }}</a>)</p>
+            <p><strong>Reserved By:</strong> {{ reservation.tenant.username }} (User ID: <a href="{{ url_for('admin.user_details', user_id=reservation.tenant.id) }}">{{ reservation.tenant.id }}</a>)</p>
             <p><strong>Full Name:</strong> {{ reservation.tenant.full_name }}</p>
             <p><strong>Email:</strong> {{ reservation.tenant.email }}</p>
             <p><strong>Booking Timestamp:</strong> {{ reservation.booking_timestamp.strftime('%Y-%m-%d %H:%M:%S') }} (UTC)</p>
@@ -102,7 +102,7 @@
                 <tr>
                     <td>
                         {% if res.tenant %} 
-                            <a href="{{ url_for('admin_routes.user_details', user_id=res.tenant.id) }}">{{ res.tenant.username }}</a> 
+                            <a href="{{ url_for('admin.user_details', user_id=res.tenant.id) }}">{{ res.tenant.username }}</a> 
                         {% else %}
                             N/A (User Deleted)
                         {% endif %}

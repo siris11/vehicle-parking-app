@@ -3,7 +3,7 @@ from flask_login import login_user, logout_user, current_user, login_required
 from urllib.parse import urlparse
 from .forms import LoginForm, RegistrationForm
 from .models import User
-from . import db # This assumes 'db' is initialized in app/__init__.py and imported via 'from app import db' in other files
+from app import db # This assumes 'db' is initialized in app/__init__.py and imported via 'from app import db' in other files
 from werkzeug.security import generate_password_hash, check_password_hash 
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -12,7 +12,7 @@ bp = Blueprint('auth', __name__, url_prefix='/auth')
 def login():
     if current_user.is_authenticated:
         if current_user.is_admin:
-            return redirect(url_for('admin_routes.dashboard'))
+            return redirect(url_for('admin.dashboard'))
         return redirect(url_for('routes.index'))
     
     form = LoginForm()
@@ -28,7 +28,7 @@ def login():
         next_page = request.args.get('next')
         if not next_page or urlparse(next_page).netloc != '':
             if user.is_admin:
-                next_page = url_for('admin_routes.dashboard')
+                next_page = url_for('admin.dashboard')
             else:
                 next_page = url_for('routes.index')
         return redirect(next_page)

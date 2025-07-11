@@ -42,7 +42,7 @@
                     </div>
                     <div class="card-body">
                         {# The form action should now point to the /lot/<int:lot_id>/book route #}
-                        <form method="POST" action="{{ url_for('user_routes.book_spot', lot_id=lot.id) }}" novalidate>
+                        <form method="POST" action="{{ url_for('user.book_spot', lot_id=lot.id) }}" novalidate>
                             {{ form.hidden_tag() }} 
                             
                             <div class="mb-3">
@@ -50,7 +50,7 @@
                             </div>
                             
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                <a href="{{ url_for('user_routes.dashboard') }}" class="btn btn-outline-secondary me-md-2">Cancel</a>
+                                <a href="{{ url_for('user.dashboard') }}" class="btn btn-outline-secondary me-md-2">Cancel</a>
                                 {{ form.submit(class="btn btn-primary") }}
                             </div>
                         </form>
@@ -61,7 +61,7 @@
                     Cannot proceed with booking: No available spots in {{ lot.name }}.
                 </div>
                 <div class="text-center mt-3"> {# Added mt-3 for spacing #}
-                    <a href="{{ url_for('user_routes.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+                    <a href="{{ url_for('user.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
                 </div>
             {% endif %}
         </div>

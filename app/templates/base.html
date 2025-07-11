@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% block head_meta %}{% endblock %}
     <title>{% block title %}{{ title|default('Vehicle Parking App') }}{% endblock %}</title>
     {{ bootstrap.load_css() }}
@@ -13,25 +13,25 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('routes.index') }}">ParkNxt</a> 
+            <a class="navbar-brand" href="{% if current_user.is_authenticated %}{% if current_user.is_admin %}{{ url_for('admin.dashboard') }}{% else %}{{ url_for('user.dashboard') }}{% endif %}{% else %}{{ url_for('auth.login') }}{% endif %}">ParkNxt</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('routes.index') }}">Home</a>
+                        <a class="nav-link" href="{% if current_user.is_authenticated %}{% if current_user.is_admin %}{{ url_for('admin.dashboard') }}{% else %}{{ url_for('user.dashboard') }}{% endif %}{% else %}{{ url_for('auth.login') }}{% endif %}">Home</a>
                     </li>
                     {% if current_user.is_authenticated %}
                         {% if current_user.is_admin %}
                             {# Admin Links #}
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_routes.dashboard') }}">Admin Dashboard</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_routes.list_parking_lots') }}">Manage Lots</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_routes.list_users') }}">View Users</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.dashboard') }}">Admin Dashboard</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.list_parking_lots') }}">Manage Lots</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.list_users') }}">View Users</a></li>
                         {% else %}
-                            {# Users #}
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('user_routes.dashboard') }}">User Dashboard</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('user_routes.dashboard') }}#search-lot">Book Parking</a></li>
+                            {# User Links #}
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('user.dashboard') }}">User Dashboard</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('user.dashboard') }}#search-lot">Book Parking</a></li>
                         {% endif %}
                     {% endif %}
                 </ul>
@@ -39,11 +39,16 @@
                     {% if current_user.is_authenticated %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Welcome, {{ current_user.username }}!
+                                <i class="bi bi-person-circle me-1"></i> {{ current_user.full_name if current_user.full_name else current_user.username }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                                <li><a class="dropdown-item" href="{{ url_for('user_routes.edit_profile') }}">Edit Profile</a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('user_routes.change_password') }}">Change Password</a></li>
+                                {% if current_user.is_admin %}
+                                    <li><a class="dropdown-item" href="{{ url_for('admin.edit_profile') }}">Edit Profile</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin.change_password') }}">Change Password</a></li>
+                                {% else %}
+                                    <li><a class="dropdown-item" href="{{ url_for('user.edit_profile') }}">Edit Profile</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('user.change_password') }}">Change Password</a></li>
+                                {% endif %}
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
                             </ul>
@@ -74,7 +79,7 @@
 
     <footer class="footer mt-auto py-3 bg-light">
         <div class="container text-center">
-            <span class="text-muted">ParkNxt &copy; {{ datetime.utcnow().year }}</span> 
+            <span class="text-muted">ParkNxt</span>
         </div>
     </footer>
 

@@ -6,7 +6,7 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1 class="mb-0">Welcome, {{ current_user.full_name if current_user.full_name else current_user.username }}!</h1> 
-        <a href="{{ url_for('user_routes.edit_profile') }}" class="btn btn-outline-primary">Edit Profile</a>
+        <a href="{{ url_for('user.edit_profile') }}" class="btn btn-outline-primary">Edit Profile</a>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -44,8 +44,10 @@
                     <tbody>
                         {% for res in user_reservations_table %}
                             <tr>
-                                <td>{{ res.parking_spot.parking_lot.name }}</td>
-                                <td>{{ res.parking_spot.spot_number }}</td>
+                                {# Safely access lot name, check if parking_spot exists first #}
+                                <td>{{ res.parking_spot.parking_lot.name if res.parking_spot and res.parking_spot.parking_lot else 'Deleted Lot' }}</td>
+                                {# Handle deleted spot #}
+                                <td>{{ res.parking_spot.spot_number if res.parking_spot else 'Deleted Spot' }}</td>
                                 <td>{{ res.vehicle_number if res.vehicle_number else 'N/A'}}</td>
                                 <td>{{ res.booking_timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
                                 <td>
@@ -65,8 +67,11 @@
                                         {% else %}
                                             Less than a minute
                                         {% endif %}
+                                    
                                     {% elif res.status == 'active' %}
-                                        <span class="badge bg-primary">Ongoing</span> {# For active reservations, duration is not yet known #}
+                                        {# Display check-in timestamp and " (Ongoing)" #}
+                                        {{ res.check_in_timestamp.strftime('%Y-%m-%d %H:%M') if res.check_in_timestamp else 'N/A' }} (Ongoing)
+                                   
                                     {% else %}
                                         - {# For pending or cancelled reservations where no actual parking occurred #}
                                     {% endif %}
@@ -94,17 +99,22 @@
                                 </td>
                                 <td>
                                     {# Conditional Actions based on status #}
-                                    {% if res.status == 'pending' %}
-                                        <form action="{{ url_for('user_routes.check_in_reservation', reservation_id=res.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Confirm check-in for this reservation?');">
-                                            <button type="submit" class="btn btn-sm btn-success me-1">Check In</button>
-                                        </form>
-                                        <form action="{{ url_for('user_routes.cancel_reservation', reservation_id=res.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this reservation?');">
-                                            <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
-                                        </form>
-                                    {% elif res.status == 'active' %}
-                                        <a href="{{ url_for('user_routes.park_out_page', reservation_id=res.id) }}" class="btn btn-sm btn-warning">Park Out</a>
+                                    {# Ensure actions are only available if spot still exists #}
+                                    {% if res.parking_spot %}
+                                        {% if res.status == 'pending' %}
+                                            <form action="{{ url_for('user.check_in_reservation', reservation_id=res.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Confirm check-in for this reservation?');">
+                                                <button type="submit" class="btn btn-sm btn-success me-1">Check In</button>
+                                            </form>
+                                            <form action="{{ url_for('user.cancel_reservation', reservation_id=res.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this reservation?');">
+                                                <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
+                                            </form>
+                                        {% elif res.status == 'active' %}
+                                            <a href="{{ url_for('user.park_out_page', reservation_id=res.id) }}" class="btn btn-sm btn-warning">Park Out</a>
+                                        {% else %}
+                                            - {# No actions for completed or cancelled reservations #}
+                                        {% endif %}
                                     {% else %}
-                                        - {# No actions for completed or cancelled reservations #}
+                                        - {# No actions if spot is deleted #}
                                     {% endif %}
                                 </td>
                             </tr>
@@ -128,7 +138,7 @@
             <h4 class="mb-0">Search Parking Lots</h4>
         </div>
         <div class="card-body">
-            <form method="GET" action="{{ url_for('user_routes.dashboard') }}#search-lot" class="row g-3 align-items-center">
+            <form method="GET" action="{{ url_for('user.dashboard') }}#search-lot" class="row g-3 align-items-center">
                 <div class="col-auto flex-grow-1">
                     <label for="search_term" class="visually-hidden">Search by Name, Address, or Pin Code</label>
                     <input type="text" class="form-control" id="search_term" name="search_term" placeholder="Enter Name, Address, or Pin Code" value="{{ search_term if search_term }}">
@@ -136,7 +146,7 @@
                 <div class="col-auto">
                     <button type="submit" class="btn btn-primary">Search</button>
                     {% if search_term %}
-                        <a href="{{ url_for('user_routes.dashboard') }}" class="btn btn-outline-secondary ms-2">Clear</a>
+                        <a href="{{ url_for('user.dashboard') }}" class="btn btn-outline-secondary ms-2">Clear</a>
                     {% endif %}
                 </div>
             </form>
@@ -159,19 +169,14 @@
                                     <p class="card-text flex-grow-1">
                                         <strong>Location:</strong> {{ lot.address if lot.address else 'N/A' }}<br>
                                         <strong>Pin Code:</strong> {{ lot.pin_code if lot.pin_code else 'N/A' }}<br>
-                                        {# <strong>Total Spots:</strong> {{ lot.maximum_capacity }}<br> #}
-                                       {# <strong>Available:</strong> <span class="badge bg-success">{{ lot.spots.filter_by(status='Available').count() }}</span><br> #}
-                                        {# <strong>Reserved:</strong> <span class="badge bg-info">{{ lot.spots.filter_by(status='Reserved').count() }}</span><br> #}
-                                       {# <strong>Occupied:</strong> <span class="badge bg-danger">{{ lot.spots.filter_by(status='Occupied').count() }}</span><br> #}
                                         <strong>Price:</strong> ₹{{ "%.2f"|format(lot.price_per_hour) }}/hour
                                     </p>
                                     <div class="mt-auto"> {# Pushes buttons to the bottom #}
-                                        <a href="{{ url_for('user_routes.book_spot', lot_id=lot.id) }}"
+                                        <a href="{{ url_for('user.book_spot', lot_id=lot.id) }}"
                                             class="btn btn-primary w-100 mb-2"
                                             {% if lot.spots.filter_by(status='Available').count() == 0 %}disabled{% endif %}> {# Disabled if no available spots #}
                                             {% if lot.spots.filter_by(status='Available').count() == 0 %}No Spots Available{% else %}Book a Spot in This Lot{% endif %}
                                         </a>
-                                        {#<a href="{{ url_for('user_routes.view_lot_spots', lot_id=lot.id) }}" class="btn btn-outline-secondary w-100">View Lot Details</a>#}
                                     </div>
                                 </div>
                                 <div class="card-footer bg-light">
