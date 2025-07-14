@@ -42,11 +42,13 @@
                         <p><strong>Vehicle Number:</strong> {{ reservation.vehicle_number if reservation.vehicle_number else 'N/A' }}</p>
                         <p>
                             <strong>Parked At:</strong> 
-                            {{ reservation.check_in_timestamp.strftime('%Y-%m-%d %H:%M:%S') }} (UTC)
+                            {# MODIFIED: Use the IST string passed from user.py #}
+                            {{ check_in_ist_str }}
                         </p>
                         <p>
                             <strong>Current Time:</strong> 
-                            {{ datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S') }} (UTC) {# Display current UTC time from server #}
+                            {# MODIFIED: Use the IST string passed from user.py #}
+                            {{ current_time_ist_str }}
                         </p>
                         <p>
                             <strong>Lot Price:</strong> 
@@ -57,10 +59,10 @@
                             {% endif %}
                         </p>
                         <hr>
-                        {# Estimated Cost Section - Now passed from server #}
+                        {# Estimated Cost Section #}
                         <h5 class="text-center text-warning">Estimated Cost & Duration</h5>
                         <p class="lead text-center mb-1">
-                            Duration: <strong>{{ estimated_duration_string }}</strong> {# Value provided by Flask route #}
+                            Duration: <strong>{{ estimated_duration_string }}</strong> 
                         </p>
                         <p class="lead text-center">
                             Cost: <strong class="text-danger">₹{{ "%.2f"|format(estimated_cost) }}</strong> 
@@ -81,18 +83,18 @@
             {% elif reservation and reservation.status != 'active' %}
                 <div class="alert alert-info shadow-sm" role="alert">
                     This reservation is already **{{ reservation.status.capitalize() }}**. The spot was {{ 'released' if reservation.status == 'completed' else 'marked as ' ~ reservation.status }} on 
-                    {% if reservation.check_out_timestamp %}{{ reservation.check_out_timestamp.strftime('%Y-%m-%d %H:%M') }}{% elif reservation.cancellation_timestamp %}{{ reservation.cancellation_timestamp.strftime('%Y-%m-%d %H:%M') }}{% else %}N/A{% endif %}.
+                    {% if check_out_ist_str %}{{ check_out_ist_str }}{% elif cancellation_ist_str %}{{ cancellation_ist_str }}{% else %}N/A{% endif %}.
                 </div>
                 <div class="text-center mt-3">
                    <a href="{{ url_for('user.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
                 </div>
             {% else %}
                <div class="alert alert-danger shadow-sm" role="alert">
-                    Reservation details not found or invalid.
-                </div>
-                <div class="text-center mt-3">
+                   Reservation details not found or invalid.
+               </div>
+               <div class="text-center mt-3">
                    <a href="{{ url_for('user.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
-                </div>
+               </div>
             {% endif %}
         </div>
     </div>

@@ -1,248 +1,257 @@
 {% extends "base.html" %}
 
-{% block title %}User Dashboard{% endblock %}
+{% block title %}User Dashboard - {{ super() }}{% endblock %}
+
+{% block head_css %}
+    <style>
+        .card-header {
+            background-color: #f8f9fa; /* Light grey header */
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 600;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px; /* Fixed height for charts */
+            width: 100%;
+        }
+    </style>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="mb-0">Welcome, {{ current_user.full_name if current_user.full_name else current_user.username }}!</h1> 
-        <a href="{{ url_for('user.edit_profile') }}" class="btn btn-outline-primary">Edit Profile</a>
-    </div>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
-    {# 1. User's Current & Recent Reservations #}
-<div class="card mb-4 shadow-sm">
-    <div class="card-header bg-primary text-white">
-        <h4 class="mb-0">Your Parking Reservations</h4>
-    </div>
-    <div class="card-body">
-        {% if user_reservations_table %}
-            <div class="table-responsive">
-                <table class="table table-hover table-sm mb-0 align-middle">
-                    <thead>
-                        <tr>
-                            <th>Lot Name</th>
-                            <th>Spot</th>
-                            <th>Vehicle No.</th>
-                            <th>Booked At</th>
-                            <th>Parking Time</th> {# This column will now show duration #}
-                            <th>Status</th>
-                            <th>Cost</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for res in user_reservations_table %}
-                            <tr>
-                                {# Safely access lot name, check if parking_spot exists first #}
-                                <td>{{ res.parking_spot.parking_lot.name if res.parking_spot and res.parking_spot.parking_lot else 'Deleted Lot' }}</td>
-                                {# Handle deleted spot #}
-                                <td>{{ res.parking_spot.spot_number if res.parking_spot else 'Deleted Spot' }}</td>
-                                <td>{{ res.vehicle_number if res.vehicle_number else 'N/A'}}</td>
-                                <td>{{ res.booking_timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
-                                <td>
-                                    {# Logic to calculate and display Parking Time (duration) #}
-                                    {% if res.check_in_timestamp and res.check_out_timestamp %}
-                                        {% set duration = res.check_out_timestamp - res.check_in_timestamp %}
-                                        {% set total_seconds = duration.total_seconds() %}
-                                        {% set hours = total_seconds // 3600 %}
-                                        {% set minutes = (total_seconds % 3600) // 60 %}
-
-                                        {% if hours > 0 and minutes > 0 %}
-                                            {{ "%d hours %d minutes" % (hours, minutes) }}
-                                        {% elif hours > 0 %}
-                                            {{ "%d hours" % hours }}
-                                        {% elif minutes > 0 %}
-                                            {{ "%d minutes" % minutes }}
-                                        {% else %}
-                                            Less than a minute
-                                        {% endif %}
-                                    
-                                    {% elif res.status == 'active' %}
-                                        {# Display check-in timestamp and " (Ongoing)" #}
-                                        {{ res.check_in_timestamp.strftime('%Y-%m-%d %H:%M') if res.check_in_timestamp else 'N/A' }} (Ongoing)
-                                   
-                                    {% else %}
-                                        - {# For pending or cancelled reservations where no actual parking occurred #}
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {# Display Reservation Status #}
-                                    {% if res.status == 'active' %}
-                                        <span class="badge bg-success">Active</span>
-                                    {% elif res.status == 'pending' %}
-                                        <span class="badge bg-info">Pending</span>
-                                    {% elif res.status == 'completed' %}
-                                        <span class="badge bg-secondary">Completed</span>
-                                    {% elif res.status == 'cancelled' %}
-                                        <span class="badge bg-danger">Cancelled</span>
-                                    {% else %}
-                                        <span class="badge bg-light text-dark">{{ res.status }}</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if res.total_cost is not none %}
-                                        ₹{{ "%.2f"|format(res.total_cost) }}
-                                    {% else %}
-                                        -
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {# Conditional Actions based on status #}
-                                    {# Ensure actions are only available if spot still exists #}
-                                    {% if res.parking_spot %}
-                                        {% if res.status == 'pending' %}
-                                            <form action="{{ url_for('user.check_in_reservation', reservation_id=res.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Confirm check-in for this reservation?');">
-                                                <button type="submit" class="btn btn-sm btn-success me-1">Check In</button>
-                                            </form>
-                                            <form action="{{ url_for('user.cancel_reservation', reservation_id=res.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this reservation?');">
-                                                <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
-                                            </form>
-                                        {% elif res.status == 'active' %}
-                                            <a href="{{ url_for('user.park_out_page', reservation_id=res.id) }}" class="btn btn-sm btn-warning">Park Out</a>
-                                        {% else %}
-                                            - {# No actions for completed or cancelled reservations #}
-                                        {% endif %}
-                                    {% else %}
-                                        - {# No actions if spot is deleted #}
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="8" class="text-center">You have no active, pending, or recent parking reservations.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <p class="mb-0 text-muted">You have no active, pending, or recent parking reservations.</p>
-        {% endif %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2 text-primary">Welcome, {{ current_user.full_name }}!</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        {# Any user-specific actions, will see it at the end!! #}
     </div>
 </div>
 
-    {# 2. Search Parking Lots #}
-    <div class="card mb-4 shadow-sm" id="search-lot">
+{% if current_user_reservation_detail %}
+    <div class="card mb-4 shadow-sm">
         <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">Search Parking Lots</h4>
+            <h5 class="my-0 font-weight-normal">Your Current Reservation</h5>
         </div>
         <div class="card-body">
-            <form method="GET" action="{{ url_for('user.dashboard') }}#search-lot" class="row g-3 align-items-center">
-                <div class="col-auto flex-grow-1">
-                    <label for="search_term" class="visually-hidden">Search by Name, Address, or Pin Code</label>
-                    <input type="text" class="form-control" id="search_term" name="search_term" placeholder="Enter Name, Address, or Pin Code" value="{{ search_term if search_term }}">
-                </div>
-                <div class="col-auto">
-                    <button type="submit" class="btn btn-primary">Search</button>
-                    {% if search_term %}
-                        <a href="{{ url_for('user.dashboard') }}" class="btn btn-outline-secondary ms-2">Clear</a>
-                    {% endif %}
-                </div>
-            </form>
+            <p><strong>Reservation ID:</strong> {{ current_user_reservation_detail.id }}</p>
+            <p><strong>Parking Lot:</strong> {{ current_user_reservation_detail.parking_lot_name }}</p>
+            <p><strong>Spot Number:</strong> {{ current_user_reservation_detail.spot_number }}</p>
+            <p><strong>Vehicle Number:</strong> {{ current_user_reservation_detail.vehicle_number }}</p>
+            <p><strong>Booked At:</strong> {{ current_user_reservation_detail.booking_timestamp_ist_str }}</p>
+            {% if current_user_reservation_detail.check_in_timestamp_ist_str %}
+                <p><strong>Check-in Time:</strong> {{ current_user_reservation_detail.check_in_timestamp_ist_str }}</p>
+            {% endif %}
+            <p><strong>Status:</strong> 
+                {% if current_user_reservation_detail.status == 'pending' %}
+                    <span class="badge bg-warning text-dark">{{ current_user_reservation_detail.status | title }}</span>
+                {% elif current_user_reservation_detail.status == 'active' %}
+                    <span class="badge bg-success">{{ current_user_reservation_detail.status | title }}</span>
+                {% endif %}
+            </p>
+            <div class="mt-3">
+                {% if current_user_reservation_detail.status == 'pending' %}
+                    <form action="{{ url_for('user.check_in_reservation', reservation_id=current_user_reservation_detail.id) }}" method="POST" class="d-inline">
+                        <button type="submit" class="btn btn-success me-2">Check In Now</button>
+                    </form>
+                    <form action="{{ url_for('user.cancel_reservation', reservation_id=current_user_reservation_detail.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this reservation?');">
+                        <button type="submit" class="btn btn-danger">Cancel Reservation</button>
+                    </form>
+                {% elif current_user_reservation_detail.status == 'active' %}
+                    <a href="{{ url_for('user.park_out_page', reservation_id=current_user_reservation_detail.id) }}" class="btn btn-primary">Park Out</a>
+                {% endif %}
+            </div>
         </div>
     </div>
+{% endif %}
 
-    {# Available Parking Lots (Display Search Results or All) #}
-    <div class="card mb-4 shadow-sm" id="parking-lots-results">
-        <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">{{ 'Search Results' if search_term else 'Available Parking Lots' }}</h4>
-        </div>
-        <div class="card-body">
+
+{# Search Parking Lots Section #}
+<div class="card mb-4 shadow-sm" id="search-lot">
+    <div class="card-header">
+        Find Parking
+    </div>
+    <div class="card-body">
+        <form class="d-flex" method="POST" action="{{ url_for('user.dashboard') }}">
+            <input class="form-control me-2" type="search" placeholder="Search by lot name, address, or pin code" aria-label="Search" name="search_term" value="{{ search_term if search_term }}">
+            <button class="btn btn-outline-primary" type="submit">Search</button>
+        </form>
+        <div class="mt-3">
             {% if parking_lots %}
-                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
                     {% for lot in parking_lots %}
                         <div class="col">
                             <div class="card h-100 shadow-sm">
                                 <div class="card-body d-flex flex-column">
                                     <h5 class="card-title text-primary">{{ lot.name }}</h5>
-                                    <p class="card-text flex-grow-1">
-                                        <strong>Location:</strong> {{ lot.address if lot.address else 'N/A' }}<br>
-                                        <strong>Pin Code:</strong> {{ lot.pin_code if lot.pin_code else 'N/A' }}<br>
-                                        <strong>Price:</strong> ₹{{ "%.2f"|format(lot.price_per_hour) }}/hour
-                                    </p>
-                                    <div class="mt-auto"> {# Pushes buttons to the bottom #}
-                                        <a href="{{ url_for('user.book_spot', lot_id=lot.id) }}"
-                                            class="btn btn-primary w-100 mb-2"
-                                            {% if lot.spots.filter_by(status='Available').count() == 0 %}disabled{% endif %}> {# Disabled if no available spots #}
-                                            {% if lot.spots.filter_by(status='Available').count() == 0 %}No Spots Available{% else %}Book a Spot in This Lot{% endif %}
-                                        </a>
+                                    <p class="card-text text-muted">{{ lot.address }}, {{ lot.pin_code }}</p>
+                                    <p class="card-text">Price: ₹{{ "%.2f"|format(lot.price_per_hour) }} / hour</p>
+                                    <p class="card-text">Available Spots: <span class="badge bg-success">{{ lot.spots.filter_by(status='Available').count() }} / {{ lot.maximum_capacity }}</span></p>
+                                    <div class="mt-auto"> {# Push button to bottom #}
+                                        {% if lot.spots.filter_by(status='Available').count() > 0 %}
+                                            <a href="{{ url_for('user.book_spot', lot_id=lot.id) }}" class="btn btn-primary btn-sm">Book Spot</a>
+                                        {% else %}
+                                            <button class="btn btn-secondary btn-sm" disabled>No Spots Available</button>
+                                        {% endif %}
                                     </div>
-                                </div>
-                                <div class="card-footer bg-light">
-                                    <small class="text-muted">Lot ID: {{ lot.id }}</small>
                                 </div>
                             </div>
                         </div>
                     {% endfor %}
                 </div>
             {% else %}
-                <div class="alert alert-info" role="alert">
-                    {% if search_term %}
-                        No parking lots found matching your search criteria "<b>{{ search_term }}</b>".
-                    {% else %}
-                        No parking lots are currently available or configured in the system.
-                    {% endif %}
-                </div>
+                <p class="text-muted">No parking lots to display. Try searching or check back later.</p>
             {% endif %}
         </div>
     </div>
+</div>
 
-    {# 3. Charts/Summaries #}
-    <div class="row">
-        {# Parking Cost Chart #}
-        <div class="col-md-6 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title text-center text-primary">Parking Cost Trends</h5>
-                    <canvas id="parkingCostChart" style="max-height: 300px;"></canvas>
-                    <p class="text-muted small text-center mt-2">Shows your parking expenses over time.</p>
+<div class="card mb-4 shadow-sm" id="your-reservations">
+    <div class="card-header">
+        Your Reservation History
+    </div>
+    <div class="card-body">
+        {% if user_reservations_table %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Lot Name</th>
+                            <th>Spot Number</th>
+                            <th>Vehicle</th>
+                            <th>Booked At</th>
+                            <th>Check-in At</th>
+                            <th>Left At</th>
+                            <th>Status</th>
+                            <th>Cost</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for res in user_reservations_table %}
+                        <tr>
+                            <td>{{ res.id }}</td>
+                            <td>
+                                {% if res.parking_spot and res.parking_spot.parking_lot %}
+                                    {{ res.parking_spot.parking_lot.name }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if res.parking_spot %}
+                                    {{ res.parking_spot.spot_number }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>{{ res.vehicle_number }}</td>
+                            <td>{{ res.booking_timestamp_ist_str }}</td>
+                            <td>
+                                {% if res.check_in_timestamp_ist_str %}
+                                    {{ res.check_in_timestamp_ist_str }}
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if res.leaving_timestamp_ist_str %}
+                                    {{ res.leaving_timestamp_ist_str }}
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if res.status == 'pending' %}
+                                    <span class="badge bg-warning text-dark">{{ res.status | title }}</span>
+                                {% elif res.status == 'active' %}
+                                    <span class="badge bg-success">{{ res.status | title }}</span>
+                                {% elif res.status == 'completed' %}
+                                    <span class="badge bg-info">{{ res.status | title }}</span>
+                                {% elif res.status == 'cancelled' %}
+                                    <span class="badge bg-danger">{{ res.status | title }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ res.status | title }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if res.total_cost is not none %}
+                                    ₹{{ "%.2f"|format(res.total_cost) }}
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if res.status == 'pending' %}
+                                    <form action="{{ url_for('user.check_in_reservation', reservation_id=res.id) }}" method="POST" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-success me-1">Check In</button>
+                                    </form>
+                                    <form action="{{ url_for('user.cancel_reservation', reservation_id=res.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this reservation?');">
+                                        <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
+                                    </form>
+                                {% elif res.status == 'active' %}
+                                    <a href="{{ url_for('user.park_out_page', reservation_id=res.id) }}" class="btn btn-sm btn-primary">Park Out</a>
+                                {% else %}
+                                    <span class="text-muted">No Actions</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted">You have no reservations yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+{# User Dashboard Charts Section #}
+<div class="card mb-4 shadow-sm">
+    <div class="card-header">
+        Your Parking Insights
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header">Parking Cost Trend (Last 10)</div>
+                    <div class="card-body d-flex justify-content-center align-items-center">
+                        <div class="chart-container">
+                            <canvas id="parkingCostChart"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        {# Parking Frequency Chart #}
-        <div class="col-md-6 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title text-center text-primary">Parking Frequency</h5>
-                    <canvas id="parkingFrequencyChart" style="max-height: 300px;"></canvas>
-                    <p class="text-muted small text-center mt-2">Tracks how often you park over the last 7 days.</p>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header">Parking Frequency (Last 7 Days)</div>
+                    <div class="card-body d-flex justify-content-center align-items-center">
+                        <div class="chart-container">
+                            <canvas id="parkingFrequencyChart"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        {# Most Visited Lots Chart (Full Width) #}
-        <div class="col-md-12 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title text-center text-primary">Most Visited Parking Lots</h5>
-                    <canvas id="mostVisitedLotsChart" style="max-height: 400px;"></canvas>
-                    <p class="text-muted small text-center mt-2">Your top parking destinations (based on last 10 completed parkings).</p>
+            <div class="col-lg-4 col-md-12 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header">Most Visited Lots (Last 10)</div>
+                    <div class="card-body d-flex justify-content-center align-items-center">
+                        <div class="chart-container">
+                            <canvas id="mostVisitedLotsChart"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-</div> {# End of container #}
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-
+    document.addEventListener('DOMContentLoaded', function() {
         // Helper function to safely get data and initialize chart
         function createChart(chartId, type, data, options) {
             const ctx = document.getElementById(chartId);
@@ -256,10 +265,8 @@
             } else if (ctx) {
                 // Display a message if no data is available
                 const parentDiv = ctx.parentElement;
-                // Remove the canvas element
-                ctx.remove();
-                // Add a message
-                parentDiv.innerHTML += `<div class="alert alert-info text-center mt-3" role="alert">No data available to display this chart yet.</div>`;
+                ctx.remove(); // Remove the canvas element
+                parentDiv.innerHTML = `<div class="alert alert-info text-center mt-3" role="alert">No data available to display this chart yet.</div>`;
                 parentDiv.style.display = 'flex';
                 parentDiv.style.flexDirection = 'column';
                 parentDiv.style.justifyContent = 'center';
@@ -268,7 +275,6 @@
         }
 
         // 1. Parking Cost Chart Data & Options
-        // Ensure that `parking_cost_chart_data` is passed from Flask route
         const parkingCostRawData = JSON.parse('{{ parking_cost_chart_data|tojson }}');
         
         const parkingCostChartData = {
@@ -302,33 +308,25 @@
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            let label = context.dataset.label || '';
-                            if (label) {
-                                label += ': ';
-                            }
-                            if (context.parsed.y !== null) {
-                                label += '₹' + context.parsed.y.toFixed(2);
-                            }
-                            return label;
+                            return context.dataset.label + ': ₹' + context.parsed.y.toFixed(2);
                         }
                     }
                 }
             }
         };
-
-        createChart('parkingCostChart', 'bar', parkingCostChartData, parkingCostChartOptions);
+        createChart('parkingCostChart', 'line', parkingCostChartData, parkingCostChartOptions);
 
 
         // 2. Parking Frequency Chart Data & Options
-        // Ensure that `parking_frequency_data` is passed from your Flask route
         const parkingFrequencyRawData = JSON.parse('{{ parking_frequency_data|tojson }}');
+
         const parkingFrequencyChartData = {
             labels: parkingFrequencyRawData.map(row => row[0]),
             datasets: [{
-                label: 'Parking Sessions',
+                label: 'Parking Count',
                 data: parkingFrequencyRawData.map(row => row[1]),
-                backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                borderColor: 'rgba(54, 162, 235, 1)',
+                backgroundColor: 'rgba(153, 102, 255, 0.5)',
+                borderColor: 'rgba(153, 102, 255, 1)',
                 borderWidth: 1
             }]
         };
@@ -338,7 +336,12 @@
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        stepSize: 1
+                        stepSize: 1, // Ensure integer ticks for counts
+                        callback: function(value) {
+                            if (Number.isInteger(value)) {
+                                return value;
+                            }
+                        }
                     }
                 }
             },
@@ -347,34 +350,30 @@
             plugins: {
                 legend: {
                     display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y;
+                        }
+                    }
                 }
             }
         };
-
         createChart('parkingFrequencyChart', 'bar', parkingFrequencyChartData, parkingFrequencyChartOptions);
 
 
         // 3. Most Visited Lots Chart Data & Options
-        // Ensure that `most_visited_lots_data` is passed from your Flask route
         const mostVisitedLotsRawData = JSON.parse('{{ most_visited_lots_data|tojson }}');
+
         const mostVisitedLotsChartData = {
             labels: mostVisitedLotsRawData.map(row => row[0]),
             datasets: [{
-                label: 'Visits',
                 data: mostVisitedLotsRawData.map(row => row[1]),
                 backgroundColor: [
-                    'rgba(255, 99, 132, 0.5)', 'rgba(54, 162, 235, 0.5)', 'rgba(255, 206, 86, 0.5)',
-                    'rgba(75, 192, 192, 0.5)', 'rgba(153, 102, 255, 0.5)', 'rgba(255, 159, 64, 0.5)',
-                    'rgba(199, 199, 199, 0.5)', 'rgba(83, 102, 255, 0.5)', 'rgba(255, 130, 86, 0.5)',
-                    'rgba(40, 150, 150, 0.5)'
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#50C878', '#C0C0C0'
                 ],
-                borderColor: [
-                    'rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)',
-                    'rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)',
-                    'rgba(199, 199, 199, 1)', 'rgba(83, 102, 255, 1)', 'rgba(255, 130, 86, 1)',
-                    'rgba(40, 150, 150, 1)'
-                ],
-                borderWidth: 1
+                hoverOffset: 4
             }]
         };
 
@@ -383,16 +382,21 @@
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'top',
+                    position: 'top'
                 },
-                title: {
-                    display: true,
-                    text: 'Most Visited Lots (Last 10 Completed Parkings)'
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            if (label) label += ': ';
+                            if (context.parsed !== null) label += context.parsed;
+                            return label;
+                        }
+                    }
                 }
             }
         };
-
-        createChart('mostVisitedLotsChart', 'pie', mostVisitedLotsChartData, mostVisitedLotsChartOptions);
+        createChart('mostVisitedLotsChart', 'doughnut', mostVisitedLotsChartData, mostVisitedLotsChartOptions);
 
     });
 </script>

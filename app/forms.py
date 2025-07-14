@@ -96,8 +96,5 @@ class ChangePasswordForm(FlaskForm):
     submit = SubmitField('Change Password')
 
     def validate_current_password(self, current_password):
-        # This validation checks if the current password matches the user's stored password.
-        # It needs the User model's check_password method.
-        # current_user must be imported from flask_login
         if not current_user.check_password(current_password.data):
             raise ValidationError('Incorrect current password.')

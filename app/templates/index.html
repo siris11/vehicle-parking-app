@@ -3,11 +3,11 @@
 {% block title %}Welcome to ParkNxt{% endblock %}
 
 {% block content %}
-<div class="container text-center py-5">
-    <h1 class="display-4 text-primary">Welcome to ParkNxt</h1>
+<div class="container text-center landing-hero-section"> 
+    <div class="centre mb-3">
+        <span class="logo-primary">Park</span><span class="logo-secondary">Nxt</span>
+    </div>
     <p class="lead text-dark">Your seamless solution for smart parking management.</p>
-    {# Your current parking_logo.jpg (red on beige) will work well with this light theme #}
-    <img src="{{ url_for('static', filename='parking_logo.jpg') }}" alt="ParkNxt Logo" class="img-fluid my-4" style="max-width: 300px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
     <p class="text-muted">Find and book parking spots with ease.</p>
     <div class="mt-4">
         <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg me-2">Login</a>

@@ -3,7 +3,7 @@ from flask_login import login_user, logout_user, current_user, login_required
 from urllib.parse import urlparse
 from .forms import LoginForm, RegistrationForm
 from .models import User
-from app import db # This assumes 'db' is initialized in app/__init__.py and imported via 'from app import db' in other files
+from app import db 
 from werkzeug.security import generate_password_hash, check_password_hash 
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')

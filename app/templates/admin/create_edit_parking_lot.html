@@ -10,9 +10,8 @@
 
 <div class="row">
     <div class="col-md-8 col-lg-6">
-        {# Determine action URL based on whether it's a create or edit form #}
         {% set action_url = url_for('admin.create_parking_lot') %}
-        {% if form.name.data and lot %} {# 'lot' object passed only during edit #}
+        {% if form.name.data and lot %} 
             {% set action_url = url_for('admin.edit_parking_lot', lot_id=lot.id) %}
         {% endif %}
         

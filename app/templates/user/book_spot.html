@@ -34,11 +34,10 @@
                 </div>
             </div>
 
-            {# The form for entering vehicle number should only show if an allocated_spot was found #}
             {% if allocated_spot %}
-                <div class="card shadow-sm"> {# Added shadow-sm #}
-                    <div class="card-header bg-light"> {# Added bg-light #}
-                        <h5 class="card-title mb-0 text-primary">Enter Your Vehicle Number to Confirm Booking</h5> {# Added text-primary #}
+                <div class="card shadow-sm"> 
+                    <div class="card-header bg-light"> 
+                        <h5 class="card-title mb-0 text-primary">Enter Your Vehicle Number to Confirm Booking</h5> 
                     </div>
                     <div class="card-body">
                         {# The form action should now point to the /lot/<int:lot_id>/book route #}

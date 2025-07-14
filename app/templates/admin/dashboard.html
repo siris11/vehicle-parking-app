@@ -3,15 +3,12 @@
 {% block title %}Admin Dashboard - {{ super() }}{% endblock %}
 
 {% block head_css %}
-    {# Chart.js script is included in the 'scripts' block at the bottom for performance #}
 {% endblock %}
 
 {% block content %}
-{# MODIFIED: Reduced pt (padding-top) to pt-2, removed mb (margin-bottom) #}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-2 pb-2 border-bottom">
-    <h1 class="h2 text-primary">Admin Dashboard</h1> {# Heading uses primary accent #}
+    <h1 class="h2 text-primary">Admin Dashboard</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
-        {# CORRECTED ENDPOINT: admin.create_parking_lot #}
         <a href="{{ url_for('admin.create_parking_lot') }}" class="btn btn-sm btn-outline-primary">
             <span data-feather="plus-circle" class="align-text-bottom"></span>
             Create New Parking Lot
@@ -22,7 +19,6 @@
 <div class="row">
     {# Total Parking Lots #}
     <div class="col-lg-2 col-md-4 col-sm-6 mb-3"> 
-        {# MODIFIED: Consistent bg-white, text-dark. H5 uses text-primary #}
         <div class="card bg-white text-dark shadow-sm h-100">
             <div class="card-body d-flex flex-column justify-content-between">
                 <h5 class="card-title mb-0 text-primary" style="font-size: 0.9rem;">Total Parking Lots</h5> 
@@ -32,7 +28,6 @@
     </div>
     {# Total Parking Spots #}
     <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-        {# MODIFIED: Consistent bg-white, text-dark. H5 uses text-primary #}
         <div class="card bg-white text-dark shadow-sm h-100">
             <div class="card-body d-flex flex-column justify-content-between">
                 <h5 class="card-title mb-0 text-primary" style="font-size: 0.9rem;">Total Parking Spots</h5>
@@ -42,7 +37,6 @@
     </div>
     {# Available Spots #}
     <div class="col-lg-2 col-md-4 col-sm-6 mb-3"> 
-        {# MODIFIED: Consistent bg-white, text-dark. H5 uses text-success #}
         <div class="card bg-white text-dark shadow-sm h-100">
             <div class="card-body d-flex flex-column justify-content-between">
                 <h5 class="card-title mb-0 text-success" style="font-size: 0.9rem;">Available Spots</h5>
@@ -52,7 +46,6 @@
     </div>
     {# Occupied Spots #}
     <div class="col-lg-2 col-md-4 col-sm-6 mb-3"> 
-        {# MODIFIED: Consistent bg-white, text-dark. H5 uses text-danger #}
         <div class="card bg-white text-dark shadow-sm h-100">
             <div class="card-body d-flex flex-column justify-content-between">
                 <h5 class="card-title mb-0 text-danger" style="font-size: 0.9rem;">Occupied Spots</h5>
@@ -62,7 +55,6 @@
     </div>
     {# Reserved Spots #}
     <div class="col-lg-2 col-md-4 col-sm-6 mb-3"> 
-        {# MODIFIED: Consistent bg-white, text-dark. H5 uses text-info #}
         <div class="card bg-white text-dark shadow-sm h-100">
             <div class="card-body d-flex flex-column justify-content-between">
                 <h5 class="card-title mb-0 text-info" style="font-size: 0.9rem;">Reserved Spots</h5>
@@ -72,7 +64,6 @@
     </div>
     {# Registered Users #}
     <div class="col-lg-2 col-md-4 col-sm-6 mb-3"> 
-        {# MODIFIED: Consistent bg-white, text-dark. H5 uses text-primary #}
         <div class="card bg-white text-dark shadow-sm h-100">
             <div class="card-body d-flex flex-column justify-content-between">
                 <h5 class="card-title mb-0 text-primary" style="font-size: 0.9rem;">Registered Users</h5>
@@ -82,45 +73,9 @@
     </div>
 </div>
 
-<h2 class="mt-4 text-primary">Overview Charts</h2> {# Heading uses primary accent #}
+<h2 class="mt-4 text-primary">Overview Charts</h2> 
 <div class="row mb-4">
-    {# Chart 1: Parking Spot Status Distribution (Doughnut) #}
-    <div class="col-lg-4 col-md-6 mb-3">
-        <div class="card shadow-sm h-100">
-            <div class="card-header bg-primary text-white"> {# Card header uses primary background #}
-                <h5 class="mb-0">Parking Spot Status</h5>
-            </div>
-            <div class="card-body d-flex justify-content-center align-items-center">
-                <canvas id="spotStatusChart" style="max-height: 250px;"></canvas>
-            </div>
-        </div>
-    </div>
-
-    {# Chart 2: Reservation Status Breakdown (Bar Chart) #}
-    <div class="col-lg-4 col-md-6 mb-3">
-        <div class="card shadow-sm h-100">
-            <div class="card-header bg-primary text-white"> {# Card header uses primary background #}
-                <h5 class="mb-0">Reservation Status Breakdown</h5>
-            </div>
-            <div class="card-body d-flex justify-content-center align-items-center">
-                <canvas id="reservationStatusChart" style="max-height: 250px;"></canvas>
-            </div>
-        </div>
-    </div>
-
-    {# Chart 3: Daily Bookings Trend (Line Chart) #}
-    <div class="col-lg-4 col-md-12 mb-3">
-        <div class="card shadow-sm h-100">
-            <div class="card-header bg-primary text-white"> {# Card header uses primary background #}
-                <h5 class="mb-0">Daily Bookings (Last 7 Days)</h5>
-            </div>
-            <div class="card-body d-flex justify-content-center align-items-center">
-                <canvas id="dailyBookingsChart" style="max-height: 250px;"></canvas>
-            </div>
-        </div>
-    </div>
-    {# Added a placeholder for Daily Revenue Chart #}
-    <div class="col-lg-4 col-md-12 mb-3">
+    <div class="col-lg-6 col-md-12 mb-3">
         <div class="card shadow-sm h-100">
             <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">Daily Revenue (Last 7 Days)</h5>
@@ -130,9 +85,42 @@
             </div>
         </div>
     </div>
+
+    <div class="col-lg-6 col-md-12 mb-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Daily Bookings (Last 7 Days)</h5>
+            </div>
+            <div class="card-body d-flex justify-content-center align-items-center">
+                <canvas id="dailyBookingsChart" style="max-height: 250px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4 col-md-6 mb-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-primary text-white"> 
+                <h5 class="mb-0">Parking Spot Status</h5>
+            </div>
+            <div class="card-body d-flex justify-content-center align-items-center">
+                <canvas id="spotStatusChart" style="max-height: 250px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4 col-md-6 mb-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-primary text-white"> 
+                <h5 class="mb-0">Reservation Status Breakdown</h5>
+            </div>
+            <div class="card-body d-flex justify-content-center align-items-center">
+                <canvas id="reservationStatusChart" style="max-height: 250px;"></canvas>
+            </div>
+        </div>
+    </div>
 </div>
 
-<h2 class="mt-4 text-primary">Parking Lot Overview</h2> {# Heading uses primary accent #}
+<h2 class="mt-4 text-primary">Parking Lot Overview</h2> 
 <div class="table-responsive">
     <table class="table table-striped table-hover align-middle">
         <thead>
@@ -178,267 +166,272 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // --- Chart 1: Parking Spot Status Distribution (Doughnut Chart) ---
+        // Helper function to create charts, including a check for data presence
+        function createChart(chartId, type, data, options) {
+            const ctx = document.getElementById(chartId);
+            if (ctx) {
+                // Check if the dataset has data points
+                const hasData = data.datasets.some(dataset => dataset.data && dataset.data.length > 0 && dataset.data.some(value => value > 0));
+
+                if (hasData) {
+                    new Chart(ctx, {
+                        type: type,
+                        data: data,
+                        options: options
+                    });
+                } else {
+                    // Display a message if no data is available
+                    const parentDiv = ctx.parentElement;
+                    ctx.remove(); // Remove the canvas element
+                    parentDiv.innerHTML = `<div class="alert alert-info text-center mt-3" role="alert">No data available to display this chart yet.</div>`;
+                    parentDiv.style.display = 'flex';
+                    parentDiv.style.flexDirection = 'column';
+                    parentDiv.style.justifyContent = 'center';
+                    parentDiv.style.alignItems = 'center';
+                }
+            }
+        }
+
+        // Chart 1: Daily Revenue Trend ]]
+        const dailyRevenueLabels = JSON.parse('{{ daily_revenue_labels | tojson }}');
+        const dailyRevenueAmounts = JSON.parse('{{ daily_revenue_amounts | tojson }}');
+
+        const dailyRevenueData = {
+            labels: dailyRevenueLabels,
+            datasets: [{
+                label: 'Revenue (₹)',
+                data: dailyRevenueAmounts,
+                borderColor: 'hsl(280, 70%, 55%)', /* A slightly different accent color for revenue */
+                backgroundColor: 'hsla(280, 70%, 55%, 0.2)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3
+            }]
+        };
+        const dailyRevenueOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { 
+                    display: true, 
+                    position: 'top',
+                    labels: {
+                        color: 'var(--bs-dark)'
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ₹' + context.parsed.y.toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) { if (Number.isInteger(value)) { return '₹' + value; } else { return '₹' + value.toFixed(2); } },
+                        color: 'var(--bs-dark)'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Revenue (₹)',
+                        color: 'var(--bs-dark)'
+                    },
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: 'var(--bs-dark)'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Date',
+                        color: 'var(--bs-dark)'
+                    },
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    }
+                }
+            }
+        };
+        createChart('dailyRevenueChart', 'line', dailyRevenueData, dailyRevenueOptions);
+
+        // Chart 2: Daily Bookings Trend
+        const dailyReservationLabels = JSON.parse('{{ daily_reservation_labels | tojson }}');
+        const dailyReservationCounts = JSON.parse('{{ daily_reservation_counts | tojson }}');
+
+        const dailyBookingsData = {
+            labels: dailyReservationLabels,
+            datasets: [{
+                label: 'Bookings',
+                data: dailyReservationCounts,
+                backgroundColor: 'hsla(210, 70%, 45%, 0.2)', /* Primary accent with transparency */
+                borderColor: 'hsl(210, 70%, 45%)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3
+            }]
+        };
+        const dailyBookingsOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { 
+                    display: true, 
+                    position: 'top',
+                    labels: {
+                        color: 'var(--bs-dark)' 
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) { if (Number.isInteger(value)) { return value; } },
+                        color: 'var(--bs-dark)' // Chart Y-axis ticks color is dark
+                    },
+                    title: {
+                        display: true,
+                        text: 'Number of Bookings',
+                        color: 'var(--bs-dark)' // Chart Y-axis title color is dark
+                    },
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)' // Chart Y-axis grid lines are light
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: 'var(--bs-dark)' // Chart X-axis ticks color is dark
+                    },
+                    title: {
+                        display: true,
+                        text: 'Date',
+                        color: 'var(--bs-dark)' // Chart X-axis title color is dark
+                    },
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)' // Chart X-axis grid lines are light
+                    }
+                }
+            }
+        };
+        createChart('dailyBookingsChart', 'line', dailyBookingsData, dailyBookingsOptions);
+
+        // Chart 3: Parking Spot Status Distribution (Doughnut) 
         const availableSpots = JSON.parse('{{ available_spots | tojson }}');
         const occupiedSpots = JSON.parse('{{ occupied_spots | tojson }}');
         const reservedSpots = JSON.parse('{{ reserved_spots | tojson }}');
 
-        var spotStatusCtx = document.getElementById('spotStatusChart').getContext('2d');
-        var spotStatusChart = new Chart(spotStatusCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Available', 'Occupied', 'Reserved'],
-                datasets: [{
-                    data: [availableSpots, occupiedSpots, reservedSpots],
-                    backgroundColor: [
-                        'hsl(140, 60%, 40%)',   // success - Green
-                        'hsl(0, 70%, 50%)',     // danger - Red
-                        'hsl(200, 70%, 45%)'    // info - Cyan (for reserved)
-                    ],
-                    borderColor: [
-                        'hsl(140, 60%, 30%)',
-                        'hsl(0, 70%, 40%)',
-                        'hsl(200, 70%, 35%)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { 
-                        position: 'top',
-                        labels: {
-                            color: 'var(--bs-dark)' // Chart legend text color is dark
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.label || '';
-                                if (label) label += ': ';
-                                if (context.parsed !== null) label += context.parsed + ' spots';
-                                return label;
-                            }
-                        }
+        const spotStatusData = {
+            labels: ['Available', 'Occupied', 'Reserved'],
+            datasets: [{
+                data: [availableSpots, occupiedSpots, reservedSpots],
+                backgroundColor: [
+                    'hsl(140, 60%, 40%)',  
+                    'hsl(0, 70%, 50%)',    
+                    'hsl(200, 70%, 45%)'    
+                ],
+                borderColor: '#fff',
+                borderWidth: 1
+            }]
+        };
+        const spotStatusOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { 
+                    position: 'top',
+                    labels: {
+                        color: 'var(--bs-dark)' 
                     }
                 },
-                cutout: '70%',
-            }
-        });
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            if (label) label += ': ';
+                            if (context.parsed !== null) label += context.parsed + ' spots';
+                            return label;
+                        }
+                    }
+                }
+            },
+            cutout: '70%',
+        };
+        createChart('spotStatusChart', 'doughnut', spotStatusData, spotStatusOptions);
 
-        // --- Chart 2: Reservation Status Breakdown (Bar Chart) ---
+        // Chart4: Reservation Status Breakdown (Bar Chart)
         const pendingReservations = JSON.parse('{{ pending_reservations | tojson }}');
         const activeReservations = JSON.parse('{{ active_reservations | tojson }}');
         const completedReservations = JSON.parse('{{ completed_reservations | tojson }}');
         const cancelledReservations = JSON.parse('{{ cancelled_reservations | tojson }}');
 
-
-        var reservationStatusCtx = document.getElementById('reservationStatusChart').getContext('2d');
-        var reservationStatusChart = new Chart(reservationStatusCtx, {
-            type: 'bar',
-            data: {
-                labels: ['Pending', 'Active', 'Completed', 'Cancelled'],
-                datasets: [{
-                    label: 'Number of Reservations',
-                    data: [pendingReservations, activeReservations, completedReservations, cancelledReservations],
-                    backgroundColor: [
-                        'hsl(200, 70%, 45%)',   // info - Cyan
-                        'hsl(140, 60%, 40%)',   // success - Green
-                        'hsl(210, 10%, 60%)',   // A neutral light grey for completed
-                        'hsl(0, 70%, 50%)'      // danger - Red
-                    ],
-                    borderColor: [
-                        'hsl(200, 70%, 35%)',
-                        'hsl(140, 60%, 30%)',
-                        'hsl(210, 10%, 50%)',
-                        'hsl(0, 70%, 40%)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.dataset.label + ': ' + context.parsed.y;
-                            }
+        const reservationStatusData = {
+            labels: ['Pending', 'Active', 'Completed', 'Cancelled'],
+            datasets: [{
+                label: 'Number of Reservations',
+                data: [pendingReservations, activeReservations, completedReservations, cancelledReservations],
+                backgroundColor: [
+                    'hsl(200, 70%, 45%)',   // info - Cyan
+                    'hsl(140, 60%, 40%)',   // success - Green
+                    'hsl(210, 10%, 60%)',   // A neutral light grey for completed
+                    'hsl(0, 70%, 50%)'      // danger - Red
+                ],
+                borderColor: [
+                    'hsl(200, 70%, 35%)',
+                    'hsl(140, 60%, 30%)',
+                    'hsl(210, 10%, 50%)',
+                    'hsl(0, 70%, 40%)'
+                ],
+                borderWidth: 1
+            }]
+        };
+        const reservationStatusOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y;
                         }
                     }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) { if (Number.isInteger(value)) { return value; } },
-                            color: 'var(--bs-dark)' // Chart Y-axis ticks color is dark
-                        },
-                        grid: {
-                            color: 'rgba(0,0,0,0.1)' // Chart Y-axis grid lines are light
-                        }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) { if (Number.isInteger(value)) { return value; } },
+                        color: 'var(--bs-dark)' // Chart Y-axis ticks color is dark
                     },
-                    x: {
-                        ticks: {
-                            color: 'var(--bs-dark)' // Chart X-axis ticks color is dark
-                        },
-                        grid: {
-                            color: 'rgba(0,0,0,0.1)' // Chart X-axis grid lines are light
-                        }
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)' // Chart Y-axis grid lines are light
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: 'var(--bs-dark)' // Chart X-axis ticks color is dark
+                    },
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)' // Chart X-axis grid lines are light
                     }
                 }
             }
-        });
-
-        // --- Chart 3: Daily Bookings Trend (Line Chart) ---
-        const dailyReservationLabels = JSON.parse('{{ daily_reservation_labels | tojson }}');
-        const dailyReservationCounts = JSON.parse('{{ daily_reservation_counts | tojson }}');
-
-        var dailyBookingsCtx = document.getElementById('dailyBookingsChart').getContext('2d');
-        var dailyBookingsChart = new Chart(dailyBookingsCtx, {
-            type: 'line',
-            data: {
-                labels: dailyReservationLabels,
-                datasets: [{
-                    label: 'Bookings',
-                    data: dailyReservationCounts,
-                    backgroundColor: 'hsla(210, 70%, 45%, 0.2)', /* Primary accent with transparency */
-                    borderColor: 'hsl(210, 70%, 45%)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.3
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { 
-                        display: true, 
-                        position: 'top',
-                        labels: {
-                            color: 'var(--bs-dark)' // Chart legend text color is dark
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.dataset.label + ': ' + context.parsed.y;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) { if (Number.isInteger(value)) { return value; } },
-                            color: 'var(--bs-dark)' // Chart Y-axis ticks color is dark
-                        },
-                        title: {
-                            display: true,
-                            text: 'Number of Bookings',
-                            color: 'var(--bs-dark)' // Chart Y-axis title color is dark
-                        },
-                        grid: {
-                            color: 'rgba(0,0,0,0.1)' // Chart Y-axis grid lines are light
-                        }
-                    },
-                    x: {
-                        ticks: {
-                            color: 'var(--bs-dark)' // Chart X-axis ticks color is dark
-                        },
-                        title: {
-                            display: true,
-                            text: 'Date',
-                            color: 'var(--bs-dark)' // Chart X-axis title color is dark
-                        },
-                        grid: {
-                            color: 'rgba(0,0,0,0.1)' // Chart X-axis grid lines are light
-                        }
-                    }
-                }
-            }
-        });
-
-        // --- Chart 4: Daily Revenue Trend (Line Chart) ---
-        // This chart was missing in the provided dashboard.html, adding it back based on admin.py data
-        const dailyRevenueLabels = JSON.parse('{{ daily_revenue_labels | tojson }}');
-        const dailyRevenueAmounts = JSON.parse('{{ daily_revenue_amounts | tojson }}');
-
-        // Check if the canvas element exists before creating the chart
-        const dailyRevenueCtx = document.getElementById('dailyRevenueChart');
-        if (dailyRevenueCtx) {
-            new Chart(dailyRevenueCtx.getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: dailyRevenueLabels,
-                    datasets: [{
-                        label: 'Revenue (₹)',
-                        data: dailyRevenueAmounts,
-                        backgroundColor: 'hsla(280, 70%, 55%, 0.2)', /* A slightly different accent color for revenue */
-                        borderColor: 'hsl(280, 70%, 55%)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.3
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { 
-                            display: true, 
-                            position: 'top',
-                            labels: {
-                                color: 'var(--bs-dark)'
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return context.dataset.label + ': ₹' + context.parsed.y.toFixed(2);
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) { if (Number.isInteger(value)) { return '₹' + value; } },
-                                color: 'var(--bs-dark)'
-                            },
-                            title: {
-                                display: true,
-                                text: 'Revenue (₹)',
-                                color: 'var(--bs-dark)'
-                            },
-                            grid: {
-                                color: 'rgba(0,0,0,0.1)'
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                color: 'var(--bs-dark)'
-                            },
-                            title: {
-                                display: true,
-                                text: 'Date',
-                                color: 'var(--bs-dark)'
-                            },
-                            grid: {
-                                color: 'rgba(0,0,0,0.1)'
-                            }
-                        }
-                    }
-                }
-            });
-        }
+        };
+        createChart('reservationStatusChart', 'bar', reservationStatusData, reservationStatusOptions);
     });
 </script>
 {% endblock %}

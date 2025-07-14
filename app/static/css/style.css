@@ -1,46 +1,35 @@
-/* static/css/style.css - Professional Light Theme */
-
-/* Custom Color Palette (overriding Bootstrap variables) */
 :root {
-    /* Professional Light Theme Colors */
-    --bs-primary: hsl(210, 70%, 45%); /* A strong, professional blue */
+    --bs-primary: hsl(210, 70%, 45%); 
     --bs-primary-rgb: 34, 113, 187; 
 
-    --bs-secondary: hsl(210, 10%, 85%); /* Light grey for subtle backgrounds, borders */
+    --bs-secondary: hsl(210, 10%, 85%); 
     --bs-secondary-rgb: 217, 222, 227;
 
-    --bs-light: hsl(210, 10%, 98%); /* Very light grey/off-white for main page background */
+    --bs-light: hsl(210, 10%, 98%); 
     --bs-light-rgb: 249, 250, 251;
 
-    --bs-dark: hsl(210, 10%, 20%); /* Dark grey for main text, ensuring readability */
+    --bs-dark: hsl(210, 10%, 20%);
     --bs-dark-rgb: 46, 51, 56;
 
-    --bs-white: hsl(0, 0%, 100%); /* Pure white for card backgrounds, etc. */
+    --bs-white: hsl(0, 0%, 100%);
     --bs-white-rgb: 255, 255, 255;
 
-    /* Status colors - standard Bootstrap colors, ensuring good contrast on light backgrounds */
-    --bs-success: hsl(140, 60%, 40%); /* Green for available/active */
-    --bs-info: hsl(200, 70%, 45%);    /* Cyan for reserved/pending */
-    --bs-warning: hsl(40, 80%, 50%);  /* Orange for warnings */
-    --bs-danger: hsl(0, 70%, 50%);    /* Red for occupied/cancelled */
+    --bs-success: hsl(140, 60%, 40%); 
+    --bs-info: hsl(200, 70%, 45%);     
+    --bs-warning: hsl(40, 80%, 50%);   
+    --bs-danger: hsl(0, 70%, 50%);     
 
-    /* Font stack for a clean, modern look */
     --bs-body-font-family: 'Inter', sans-serif, system-ui;
     --bs-font-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
-/* Import Google Font - Inter (add this to your base.html <head> if not already) */
-/* <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"> */
-
-
-/* General Body and Main Layout */
 body {
     padding-top: 0; 
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    background-color: var(--bs-light); /* Main background is light */
-    color: var(--bs-dark); /* Default text color is dark */
+    background-color: var(--bs-light); 
+    color: var(--bs-dark); 
     font-family: var(--bs-body-font-family);
     overscroll-behavior: auto;
 }
@@ -52,45 +41,70 @@ main {
     padding-bottom: 2rem; 
 }
 
-/* Navbar Styling */
+.logo-primary {
+    color: black;
+    font-weight: bold;
+}
+
+.logo-secondary {
+    color: #3b82f6;
+    font-weight: bold;
+}
+
+.navbar-logo {
+    font-size: 22px;
+    font-family: 'Inter', sans-serif;
+}
+
+.centre {
+    font-size: 60px;
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+    margin-top: 20px; 
+}
+
+/* .landing-hero-section {
+    margin-top: -50px; } */
+
+
 .navbar {
-    background-color: var(--bs-white) !important; /* White navbar background */
-    border-bottom: 1px solid var(--bs-secondary); /* Subtle light grey border */
-    box-shadow: 0 2px 4px rgba(0,0,0,.05); /* Light shadow for depth */
+    background-color: var(--bs-white) !important; 
+    border-bottom: 1px solid var(--bs-secondary); 
+    box-shadow: 0 2px 4px rgba(0,0,0,.05); 
 }
 
 .navbar-brand {
     font-weight: 700;
-    color: var(--bs-primary) !important; /* Primary blue for brand */
+    color: var(--bs-primary) !important; 
 }
 
 .navbar-nav .nav-link {
-    color: var(--bs-dark) !important; /* Dark text for links */
+    color: var(--bs-dark) !important;
     font-weight: 500;
-    opacity: 0.8; /* Slightly muted by default */
+    opacity: 0.8; 
     transition: color 0.2s ease-in-out, opacity 0.2s ease-in-out;
 }
 
 .navbar-nav .nav-link:hover {
-    color: var(--bs-primary) !important; /* Primary blue on hover */
+    color: var(--bs-primary) !important;
     opacity: 1;
 }
 
 .navbar-nav .nav-item.dropdown .dropdown-menu {
-    background-color: var(--bs-white); /* White background for dropdown menu */
+    background-color: var(--bs-white); 
     border: 1px solid var(--bs-secondary);
     border-radius: .5rem;
     box-shadow: 0 4px 12px rgba(0,0,0,.1);
 }
 
 .navbar-nav .nav-item.dropdown .dropdown-item {
-    color: var(--bs-dark); /* Dark text for dropdown items */
+    color: var(--bs-dark);
     transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
 }
 
 .navbar-nav .nav-item.dropdown .dropdown-item:hover {
-    background-color: var(--bs-primary); /* Primary background on hover */
-    color: var(--bs-white); /* White text on hover */
+    background-color: var(--bs-primary); 
+    color: var(--bs-white); 
 }
 
 .navbar-nav .nav-item.dropdown .dropdown-divider {
@@ -98,28 +112,17 @@ main {
 }
 
 
-/* Footer Styling */
-.footer {
-    width: 100%;
-    height: 60px; 
-    line-height: 60px;
-    background-color: var(--bs-secondary); /* Light grey footer */
-    color: var(--bs-dark); /* Dark text on light footer */
-    border-top: 1px solid var(--bs-secondary);
-}
-
-/* Card Styling */
 .card {
     border: none;
     border-radius: .75rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,.08); /* Soft shadow for light theme */
-    background-color: var(--bs-white); /* Cards are white */
-    color: var(--bs-dark); /* Default text on cards is dark */
+    box-shadow: 0 4px 12px rgba(0,0,0,.08); 
+    background-color: var(--bs-white); 
+    color: var(--bs-dark); 
 }
 
 .card-header {
-    background-color: var(--bs-primary) !important; /* Primary blue for card headers */
-    color: var(--bs-white) !important; /* White text on primary header */
+    background-color: var(--bs-primary) !important; 
+    color: var(--bs-white) !important; 
     border-bottom: none;
     border-top-left-radius: .75rem;
     border-top-right-radius: .75rem;
@@ -127,14 +130,13 @@ main {
 
 .card-title {
     font-weight: 600;
-    color: var(--bs-primary); /* Card titles use primary accent color by default */
+    color: var(--bs-primary); 
 }
 
-/* Button Styling (Primary) */
 .btn-primary {
     --bs-btn-bg: var(--bs-primary);
     --bs-btn-border-color: var(--bs-primary);
-    --bs-btn-hover-bg: hsl(210, 70%, 35%); /* Darker primary on hover */
+    --bs-btn-hover-bg: hsl(210, 70%, 35%); 
     --bs-btn-hover-border-color: hsl(210, 70%, 35%);
     --bs-btn-active-bg: hsl(210, 70%, 35%);
     --bs-btn-active-border-color: hsl(210, 70%, 35%);
@@ -149,7 +151,6 @@ main {
     box-shadow: 0 4px 8px rgba(0,0,0,.15);
 }
 
-/* Button Styling (Outline Primary) */
 .btn-outline-primary {
     --bs-btn-color: var(--bs-primary);
     --bs-btn-border-color: var(--bs-primary);
@@ -162,7 +163,6 @@ main {
     transition: all 0.2s ease-in-out;
 }
 
-/* Other Button Styles (Warning, Success, Danger, Info) */
 .btn-warning {
     --bs-btn-bg: var(--bs-warning);
     --bs-btn-border-color: var(--bs-warning);
@@ -204,42 +204,38 @@ main {
 }
 
 
-/* Form Control Styling */
 .form-control {
     border-radius: .5rem;
-    border: 1px solid var(--bs-secondary); /* Light border */
-    background-color: var(--bs-white); /* White background for inputs */
-    color: var(--bs-dark); /* Dark text input */
+    border: 1px solid var(--bs-secondary); 
+    background-color: var(--bs-white); 
+    color: var(--bs-dark);
     box-shadow: inset 0 1px 2px rgba(0,0,0,.075);
     padding: .75rem 1rem;
 }
 
 .form-control:focus {
     border-color: var(--bs-primary);
-    box-shadow: 0 0 0 .25rem hsla(210, 70%, 45%, 0.25); /* Primary color focus ring */
-    background-color: var(--bs-white); /* Keep white on focus */
+    box-shadow: 0 0 0 .25rem hsla(210, 70%, 45%, 0.25); 
+    background-color: var(--bs-white); 
     color: var(--bs-dark);
 }
 
-/* Placeholder text color for inputs */
 .form-control::placeholder {
-    color: var(--bs-secondary); /* Muted placeholder text */
-    opacity: 1; /* Firefox fix */
+    color: var(--bs-secondary);
+    opacity: 1; 
 }
 
-
-/* Table Styling */
 .table {
-    --bs-table-bg: var(--bs-white); /* Table background is white */
-    --bs-table-striped-bg: hsl(210, 10%, 95%); /* Very light stripe */
-    --bs-table-hover-bg: hsl(210, 10%, 90%); /* Slightly darker on hover */
+    --bs-table-bg: var(--bs-white);
+    --bs-table-striped-bg: hsl(210, 10%, 95%); 
+    --bs-table-hover-bg: hsl(210, 10%, 90%); 
     border-radius: .75rem;
     overflow: hidden;
-    color: var(--bs-dark); /* Table text is dark */
+    color: var(--bs-dark);
 }
 
 .table thead {
-    background-color: var(--bs-primary); /* Table header is primary blue */
+    background-color: var(--bs-primary); 
     color: var(--bs-white);
 }
 
@@ -250,7 +246,7 @@ main {
 }
 
 .table tbody tr {
-    border-bottom: 1px solid var(--bs-secondary); /* Subtle row dividers */
+    border-bottom: 1px solid var(--bs-secondary); 
 }
 
 .table tbody tr:last-child {
@@ -261,13 +257,11 @@ main {
     padding: .75rem 1rem;
 }
 
-/* Alert Styling */
 .alert {
     border-radius: .5rem;
     font-weight: 500;
-    color: var(--bs-dark); /* Alerts have dark text */
-    /* Adjust specific alert background colors to be lighter */
-    --bs-alert-bg: var(--bs-secondary); /* Default alert background */
+    color: var(--bs-dark);
+    --bs-alert-bg: var(--bs-secondary); 
     --bs-alert-border-color: var(--bs-secondary);
     --bs-alert-color: var(--bs-dark);
 }
@@ -275,26 +269,24 @@ main {
 .alert-success {
     --bs-alert-bg: hsl(140, 60%, 90%);
     --bs-alert-border-color: hsl(140, 60%, 85%);
-    color: hsl(140, 60%, 20%) !important; /* Darker green text */
+    color: hsl(140, 60%, 20%) !important; 
 }
 .alert-danger {
     --bs-alert-bg: hsl(0, 70%, 90%);
     --bs-alert-border-color: hsl(0, 70%, 85%);
-    color: hsl(0, 70%, 30%) !important; /* Darker red text */
+    color: hsl(0, 70%, 30%) !important;
 }
 .alert-info {
     --bs-alert-bg: hsl(200, 70%, 90%);
     --bs-alert-border-color: hsl(200, 70%, 85%);
-    color: hsl(200, 70%, 25%) !important; /* Darker info text */
+    color: hsl(200, 70%, 25%) !important; 
 }
 .alert-warning {
     --bs-alert-bg: hsl(40, 80%, 90%);
     --bs-alert-border-color: hsl(40, 80%, 85%);
-    color: hsl(40, 80%, 20%) !important; /* Darker warning text */
+    color: hsl(40, 80%, 20%) !important;
 }
 
-
-/* Specific Spot Card Styling (used in view_lot_spots) */
 .spot-card.available {
     border-left: 5px solid var(--bs-success); 
 }
@@ -303,39 +295,35 @@ main {
     border-left: 5px solid var(--bs-danger);
 }
 
-/* Subtle background colors for status indicators (adjusting for light theme) */
 .bg-danger-subtle {
-    background-color: hsl(0, 70%, 95%) !important; /* Lighter subtle red */
-    color: var(--bs-dark) !important; /* Dark text on subtle backgrounds */
+    background-color: hsl(0, 70%, 95%) !important;
+    color: var(--bs-dark) !important; 
 }
 .bg-success-subtle {
-    background-color: hsl(140, 60%, 95%) !important; /* Lighter subtle green */
-    color: var(--bs-dark) !important; /* Dark text on subtle backgrounds */
+    background-color: hsl(140, 60%, 95%) !important; 
+    color: var(--bs-dark) !important; 
 }
 
-/* Badges for status */
 .badge {
     padding: .5em .75em;
     border-radius: .35rem;
     font-size: .85em;
     font-weight: 600;
-    color: var(--bs-white); /* Default white text for badges on colored backgrounds */
+    color: var(--bs-white); 
 }
-/* Ensure text is white on Bootstrap's colored backgrounds (for summary boxes) */
 .bg-primary,
 .bg-success,
 .bg-info,
 .bg-danger,
 .bg-warning {
-    color: var(--bs-white) !important; /* Force white text on these backgrounds */
+    color: var(--bs-white) !important; 
 }
 
-/* Admin Dashboard Summary Box Styling (Simplified Colors - Light Theme) */
-/* All summary boxes will have a consistent light background */
-.card .p-3.border.rounded { /* Target the specific divs in dashboard.html */
-    background-color: var(--bs-white) !important; /* Consistent white background */
-    color: var(--bs-dark) !important; /* All text inside is dark */
-    border: 1px solid var(--bs-secondary) !important; /* Subtle border */
+/* Admin Dashboard Summary Box (Simplified Colors - Light Theme) */
+.card .p-3.border.rounded { 
+    background-color: var(--bs-white) !important; 
+    color: var(--bs-dark) !important; 
+    border: 1px solid var(--bs-secondary) !important;
     box-shadow: 0 2px 6px rgba(0,0,0,.08);
 }
 
@@ -346,14 +334,12 @@ main {
 }
 
 /* Use text colors for subtle status cues within the summary boxes */
-.card .p-3.border.rounded.bg-primary h5 { color: var(--bs-primary) !important; } /* Total Lots/Spots */
-.card .p-3.border.rounded.bg-success h5 { color: var(--bs-success) !important; } /* Available/Active */
-.card .p-3.border.rounded.bg-info h5 { color: var(--bs-info) !important; } /* Reserved/Pending */
-.card .p-3.border.rounded.bg-danger h5 { color: var(--bs-danger) !important; } /* Occupied/Cancelled */
-.card .p-3.border.rounded.bg-secondary h5 { color: var(--bs-primary) !important; } /* Registered Users - use primary accent */
+.card .p-3.border.rounded.bg-primary h5 { color: var(--bs-primary) !important; } 
+.card .p-3.border.rounded.bg-success h5 { color: var(--bs-success) !important; } 
+.card .p-3.border.rounded.bg-info h5 { color: var(--bs-info) !important; } 
+.card .p-3.border.rounded.bg-danger h5 { color: var(--bs-danger) !important; } 
+.card .p-3.border.rounded.bg-secondary h5 { color: var(--bs-primary) !important; }
 
-
-/* Explicitly ensure text colors for Bootstrap utilities are visible on light backgrounds */
 .text-primary { color: var(--bs-primary) !important; }
 .text-secondary { color: var(--bs-dark) !important; } /* Secondary text is now dark on light */
 .text-success { color: var(--bs-success) !important; }

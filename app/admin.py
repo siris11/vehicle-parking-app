@@ -6,12 +6,9 @@ from .models import ParkingLot, ParkingSpot, User, Reservation
 from . import db
 from datetime import datetime, timedelta
 from sqlalchemy import func 
-import pytz # Import pytz for timezone handling
+import pytz 
 
-# Define the blueprint name as 'admin' as per your configuration
 bp = Blueprint('admin', __name__)
-
-# Define the Indian Standard Time (IST) timezone
 IST = pytz.timezone('Asia/Kolkata')
 
 # Decorator to ensure user is admin
@@ -80,8 +77,6 @@ def dashboard():
         daily_revenue_labels.append(display_label)
         daily_revenue_map[date_ist.strftime('%Y-%m-%d')] = 0.0
 
-    # Calculate revenue based on completed reservations within the last 7 IST days
-    # Need to find the UTC start of 7 days ago in IST
     seven_days_ago_ist = today_ist - timedelta(days=7)
     start_of_period_utc = IST.localize(datetime(seven_days_ago_ist.year, seven_days_ago_ist.month, seven_days_ago_ist.day, 0, 0, 0)).astimezone(pytz.utc)
 
@@ -92,7 +87,6 @@ def dashboard():
 
     for res in recent_completed_reservations:
         if res.total_cost is not None and res.check_out_timestamp:
-            # Convert UTC checkout timestamp to IST to get the correct IST date
             checkout_timestamp_ist = res.check_out_timestamp.replace(tzinfo=pytz.utc).astimezone(IST)
             checkout_date_ist_str = checkout_timestamp_ist.strftime('%Y-%m-%d')
             
@@ -171,7 +165,6 @@ def edit_parking_lot(lot_id):
         lot.pin_code = form.pin_code.data
         lot.price_per_hour = form.price_per_hour.data
         
-        # Add spots logic (as provided by you)
         if new_capacity > original_capacity:
             add_spots = new_capacity - original_capacity
             last_present_spot = db.session.query(func.max(ParkingSpot.spot_number)).filter_by(lot_id=lot.id).scalar()
@@ -179,19 +172,17 @@ def edit_parking_lot(lot_id):
             start_from_number = 1
             if last_present_spot:
                 try:
-                    # Assuming spot numbers are like 'A001', 'S001' etc.
-                    numeric_part = int(last_present_spot.lstrip('AS')) # Handle both 'A' and 'S' prefixes
+                    numeric_part = int(last_present_spot.lstrip('AS')) 
                     start_from_number = numeric_part + 1
                 except (ValueError, TypeError):
                     print(f"Warning: Could not parse spot number '{last_present_spot}'. Starting new spots from S001.")
 
             for i in range(start_from_number, start_from_number + add_spots):
-                spot_number = f"S{i:03d}" # Use 'S' prefix for new spots
+                spot_number = f"S{i:03d}" 
                 spot = ParkingSpot(spot_number=spot_number, lot_id=lot.id, status='Available')
                 db.session.add(spot)
             flash(f'Capacity increased. {add_spots} new spots added.', 'success')
 
-        # Decrease spots logic (as provided by you)
         elif new_capacity < original_capacity:
             delete_spots = original_capacity - new_capacity
 
@@ -204,7 +195,7 @@ def edit_parking_lot(lot_id):
             if len(spots_to_delete) < delete_spots:
                 flash(f'Cannot reduce capacity by {delete_spots} spots. Only {len(spots_to_delete)} truly available spots can be removed. Please ensure spots are free and have no active or pending reservations.', 'danger')
                 db.session.rollback()
-                return redirect(url_for('admin.edit_parking_lot', lot_id=lot.id)) # Corrected blueprint
+                return redirect(url_for('admin.edit_parking_lot', lot_id=lot.id)) 
             else:
                 for spot_to_delete in spots_to_delete:
                     db.session.delete(spot_to_delete)
@@ -213,7 +204,7 @@ def edit_parking_lot(lot_id):
         lot.maximum_capacity = new_capacity
         db.session.commit()
         flash(f'Parking lot \'{lot.name}\' updated successfully!', 'success')
-        return redirect(url_for('admin.list_parking_lots')) # Corrected blueprint
+        return redirect(url_for('admin.list_parking_lots'))
 
     return render_template('admin/create_edit_parking_lot.html', form=form, title='Edit Parking Lot', legend=f'Edit {lot.name}', lot=lot, ParkingSpot=ParkingSpot)
 
@@ -230,8 +221,7 @@ def delete_parking_lot(lot_id):
 
     if occupied_or_reserved_spots > 0:
         flash(f'Cannot delete parking lot \'{lot.name}\'. It has occupied or reserved spots.', 'danger')
-        return redirect(url_for('admin.list_parking_lots')) # Corrected blueprint
-    
+        return redirect(url_for('admin.list_parking_lots')) 
     active_or_pending_reservations_in_lot = Reservation.query.join(ParkingSpot).filter(
         ParkingSpot.lot_id == lot.id,
         Reservation.status.in_(['pending', 'active'])
@@ -239,13 +229,13 @@ def delete_parking_lot(lot_id):
 
     if active_or_pending_reservations_in_lot > 0:
         flash(f'Cannot delete parking lot \'{lot.name}\'. It has active or pending reservations.', 'danger')
-        return redirect(url_for('admin.list_parking_lots')) # Corrected blueprint
+        return redirect(url_for('admin.list_parking_lots')) 
 
     lot_name = lot.name
     db.session.delete(lot)
     db.session.commit()
     flash(f'Parking lot \'{lot_name}\' and its spots have been deleted.', 'success')
-    return redirect(url_for('admin.list_parking_lots')) # Corrected blueprint
+    return redirect(url_for('admin.list_parking_lots')) 
 
 @bp.route('/view_spots/<int:lot_id>')
 @login_required
@@ -273,7 +263,6 @@ def view_spot_details(spot_id):
         status='active' 
     ).first()
 
-    # Convert active reservation timestamps to IST strings BEFORE passing to template
     parked_at_ist_str = None
     if reservation and reservation.booking_timestamp:
         parked_at_ist_str = reservation.booking_timestamp.replace(tzinfo=pytz.utc).astimezone(IST).strftime('%Y-%m-%d %H:%M:%S (IST)')
@@ -294,7 +283,7 @@ def view_spot_details(spot_id):
         
         reservations_history_for_template.append({
             'id': res.id,
-            'tenant': res.tenant, # Keep object for username/id
+            'tenant': res.tenant, 
             'vehicle_number': res.vehicle_number,
             'booking_timestamp_ist_str': booking_ist_str,
             'check_in_timestamp_ist_str': check_in_ist_str,
@@ -305,11 +294,11 @@ def view_spot_details(spot_id):
 
     return render_template('admin/view_spot_details.html', 
                              spot=spot, 
-                             reservation=reservation, # Active reservation object
+                             reservation=reservation, 
                              title=f'Details for Spot {spot.spot_number}', 
                              parked_at_ist_str=parked_at_ist_str, # IST string for active reservation
                              current_time_ist_str=current_time_ist_str, # IST string for current time
-                             reservations_history=reservations_history_for_template) # IST strings for history
+                             reservations_history=reservations_history_for_template) 
 
 
 @bp.route('/spot/delete/<int:spot_id>', methods=['POST'])
@@ -321,7 +310,7 @@ def delete_spot(spot_id):
 
     if spot.status in ['Occupied', 'Reserved']:
         flash(f'Spot {spot.spot_number} in lot {lot.name} is {spot.status.lower()} and cannot be deleted.', 'danger')
-        return redirect(url_for('admin.view_lot_spots', lot_id=lot.id)) # Corrected blueprint
+        return redirect(url_for('admin.view_lot_spots', lot_id=lot.id)) 
 
     active_or_pending_reservation = Reservation.query.filter(
         Reservation.spot_id == spot.id,
@@ -329,8 +318,7 @@ def delete_spot(spot_id):
     ).first()
     if active_or_pending_reservation:
         flash(f'Spot {spot.spot_number} in lot {lot.name} has an active or pending reservation and cannot be deleted.', 'danger')
-        return redirect(url_for('admin.view_lot_spots', lot_id=lot.id)) # Corrected blueprint
-
+        return redirect(url_for('admin.view_lot_spots', lot_id=lot.id)) 
     spot_number_deleted = spot.spot_number
     db.session.delete(spot)
     
@@ -339,7 +327,7 @@ def delete_spot(spot_id):
     
     db.session.commit()
     flash(f'Parking spot {spot_number_deleted} in lot {lot.name} has been deleted. Lot capacity adjusted.', 'success')
-    return redirect(url_for('admin.view_lot_spots', lot_id=lot.id)) # Corrected blueprint
+    return redirect(url_for('admin.view_lot_spots', lot_id=lot.id))
 
 
 @bp.route('/users')
@@ -357,7 +345,6 @@ def user_details(user_id):
     user = User.query.get_or_404(user_id)
     reservations = user.reservations.order_by(Reservation.booking_timestamp.desc()).all()
     
-    # Convert timestamps in reservations to IST strings BEFORE passing to template
     reservations_for_template = []
     for res in reservations:
         booking_ist_str = res.booking_timestamp.replace(tzinfo=pytz.utc).astimezone(IST).strftime('%Y-%m-%d %H:%M (IST)')
@@ -381,8 +368,7 @@ def user_details(user_id):
             'tenant': res.tenant # Keep object for username
         })
 
-    # Pass the modified list of reservations to the template
     return render_template('admin/user_details.html', 
                              user=user, 
-                             reservations=reservations_for_template, # Pass the modified list
+                             reservations=reservations_for_template,
                              title=f'Details for {user.full_name}')

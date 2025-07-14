@@ -6,13 +6,14 @@ from .models import ParkingLot, ParkingSpot, User, Reservation
 from . import db
 from sqlalchemy import or_ 
 from werkzeug.security import generate_password_hash, check_password_hash 
-
+import pytz 
 bp = Blueprint('user', __name__)
 
-@bp.route('/dashboard', methods=['GET', 'POST']) # Allow POST for search form
+IST = pytz.timezone('Asia/Kolkata')
+
+@bp.route('/dashboard', methods=['GET', 'POST'])
 @login_required
 def dashboard():
-    # Initialize search variables
     search_term = request.form.get('search_term') if request.method == 'POST' else request.args.get('search_term')
     
     # Fetch parking lots - apply search filter if term exists
@@ -31,15 +32,58 @@ def dashboard():
         parking_lots = ParkingLot.query.order_by(ParkingLot.name).all()
     
     # Fetch current user's active AND pending reservations
-    user_current_reservations = Reservation.query.filter(
+    user_reservations_raw = Reservation.query.filter(
         Reservation.user_id == current_user.id,
-        Reservation.status.in_(['pending', 'active', 'completed', 'cancelled']) # Include all for history table
-    ).order_by(Reservation.booking_timestamp.desc()).all() # Order by booking time
+        Reservation.status.in_(['pending', 'active', 'completed', 'cancelled'])
+    ).order_by(Reservation.booking_timestamp.desc()).all()
 
-    # This flag is still useful for displaying user-specific messages/buttons
-    has_active_or_pending_reservation = any(res.status in ['pending', 'active'] for res in user_current_reservations)
+    user_reservations_table = []
+    has_active_or_pending_reservation = False
+    current_user_reservation_detail = None 
 
-    # Forms (passed to template if needed for rendering within dashboard)
+    for res in user_reservations_raw:
+        # Check for active or pending reservation for the alert/detail box
+        if res.status in ['pending', 'active'] and not current_user_reservation_detail:
+            has_active_or_pending_reservation = True
+            # Prepare details for the single active/pending reservation
+            booking_ist_str = res.booking_timestamp.replace(tzinfo=pytz.utc).astimezone(IST).strftime('%Y-%m-%d %H:%M (IST)')
+            check_in_ist_str = None
+            if res.check_in_timestamp:
+                check_in_ist_str = res.check_in_timestamp.replace(tzinfo=pytz.utc).astimezone(IST).strftime('%Y-%m-%d %H:%M (IST)')
+            
+            current_user_reservation_detail = {
+                'id': res.id,
+                'parking_lot_name': res.parking_spot.parking_lot.name if res.parking_spot and res.parking_spot.parking_lot else 'N/A',
+                'spot_number': res.parking_spot.spot_number if res.parking_spot else 'N/A',
+                'vehicle_number': res.vehicle_number,
+                'booking_timestamp_ist_str': booking_ist_str,
+                'check_in_timestamp_ist_str': check_in_ist_str,
+                'status': res.status,
+                'total_cost': res.total_cost, # Will be None for active/pending
+                'res_object': res # Keep the original object for actions
+            }
+
+        # Prepare all reservations for the history table
+        booking_ist_str_for_table = res.booking_timestamp.replace(tzinfo=pytz.utc).astimezone(IST).strftime('%Y-%m-%d %H:%M (IST)')
+        check_in_ist_str_for_table = None
+        if res.check_in_timestamp:
+            check_in_ist_str_for_table = res.check_in_timestamp.replace(tzinfo=pytz.utc).astimezone(IST).strftime('%Y-%m-%d %H:%M (IST)')
+        check_out_ist_str_for_table = None
+        if res.check_out_timestamp:
+            check_out_ist_str_for_table = res.check_out_timestamp.replace(tzinfo=pytz.utc).astimezone(IST).strftime('%Y-%m-%d %H:%M (IST)')
+        
+        user_reservations_table.append({
+            'id': res.id,
+            'parking_spot': res.parking_spot,
+            'vehicle_number': res.vehicle_number,
+            'booking_timestamp_ist_str': booking_ist_str_for_table,
+            'check_in_timestamp_ist_str': check_in_ist_str_for_table,
+            'check_out_timestamp_ist_str': check_out_ist_str_for_table,
+            'total_cost': res.total_cost,
+            'status': res.status
+        })
+
+
     book_form = BookSpotForm()
     check_in_form = CheckInForm() 
     park_out_form = ParkOutForm()
@@ -55,20 +99,27 @@ def dashboard():
     parking_cost_chart_data = []
     for res in completed_reservations[:10]: # Take last 10
         if res.total_cost is not None and res.check_out_timestamp:
-            parking_cost_chart_data.append([res.check_out_timestamp.strftime('%Y-%m-%d'), res.total_cost])
+            # Convert checkout timestamp to IST for chart labels
+            checkout_ist_str = res.check_out_timestamp.replace(tzinfo=pytz.utc).astimezone(IST).strftime('%Y-%m-%d')
+            parking_cost_chart_data.append([checkout_ist_str, res.total_cost])
     parking_cost_chart_data.reverse() # Show oldest first on chart
 
     # 2. Parking Frequency Chart Data (last 7 days)
     parking_frequency_data = {}
-    today = datetime.utcnow().date()
+    today_utc = datetime.utcnow().date()
+    today_ist = datetime.utcnow().replace(tzinfo=pytz.utc).astimezone(IST).date()
+
     for i in range(7):
-        date = today - timedelta(days=i)
-        parking_frequency_data[date.strftime('%Y-%m-%d')] = 0
+        date_ist = today_ist - timedelta(days=i)
+        parking_frequency_data[date_ist.strftime('%Y-%m-%d')] = 0
     
     for res in completed_reservations:
-        if res.check_out_timestamp and (today - res.check_out_timestamp.date()).days < 7:
-            date_str = res.check_out_timestamp.strftime('%Y-%m-%d')
-            parking_frequency_data[date_str] = parking_frequency_data.get(date_str, 0) + 1
+        if res.check_out_timestamp:
+            # Convert check_out_timestamp to IST date for comparison
+            checkout_date_ist = res.check_out_timestamp.replace(tzinfo=pytz.utc).astimezone(IST).date()
+            if (today_ist - checkout_date_ist).days < 7:
+                date_str = checkout_date_ist.strftime('%Y-%m-%d')
+                parking_frequency_data[date_str] = parking_frequency_data.get(date_str, 0) + 1
     
     parking_frequency_chart_data = sorted(parking_frequency_data.items()) # Sort by date
 
@@ -85,8 +136,9 @@ def dashboard():
     return render_template('user/dashboard.html', 
                            title='User Dashboard',
                            parking_lots=parking_lots,
-                           user_reservations_table=user_current_reservations, # Pass all reservations for the table
+                           user_reservations_table=user_reservations_table, # Pass the modified list for the table
                            has_active_or_pending_reservation=has_active_or_pending_reservation,
+                           current_user_reservation_detail=current_user_reservation_detail, # Pass the single detail object
                            book_form=book_form,
                            check_in_form=check_in_form,
                            park_out_form=park_out_form,
@@ -135,7 +187,7 @@ def book_spot(lot_id):
                            lot=lot, 
                            allocated_spot=available_spot)
 
-@bp.route('/check_in_reservation/<int:reservation_id>', methods=['POST']) # Renamed route
+@bp.route('/check_in_reservation/<int:reservation_id>', methods=['POST']) 
 @login_required
 def check_in_reservation(reservation_id):
     reservation = Reservation.query.get_or_404(reservation_id)
@@ -167,7 +219,7 @@ def check_in_reservation(reservation_id):
     
     return redirect(url_for('user.dashboard'))
 
-@bp.route('/park_out_page/<int:reservation_id>', methods=['GET']) # Route to display the park-out confirmation page
+@bp.route('/park_out_page/<int:reservation_id>', methods=['GET']) 
 @login_required
 def park_out_page(reservation_id):
     reservation = Reservation.query.get_or_404(reservation_id)
@@ -175,38 +227,46 @@ def park_out_page(reservation_id):
     if reservation.user_id != current_user.id:
         flash('You do not have permission to view this park out page.', 'danger')
         return redirect(url_for('user.dashboard'))
-    
-    if reservation.status != 'active':
-        flash('This reservation is not in an active state.', 'danger')
-        return redirect(url_for('user.dashboard'))
-
-    # Calculate estimated cost and duration for display on the page
+   
+    check_in_ist_str = None
+    current_time_ist_str = datetime.utcnow().replace(tzinfo=pytz.utc).astimezone(IST).strftime('%Y-%m-%d %H:%M:%S (IST)')
+    check_out_ist_str = None
+    cancellation_ist_str = None
     estimated_duration_string = "N/A"
     estimated_cost = 0.0
 
-    if reservation.check_in_timestamp:
-        current_time = datetime.utcnow()
-        duration = current_time - reservation.check_in_timestamp
-        duration_hours = duration.total_seconds() / 3600.0
-        
-        # Round up to nearest hour for display, ensure minimum 1 hour charge
-        charged_hours = max(1.0, (duration.total_seconds() / 3600.0)) # Use raw duration for display calculation
-        
-        # Format duration string
-        hours = int(duration_hours)
-        minutes = int((duration_hours * 60) % 60)
-        estimated_duration_string = f"{hours} hours {minutes} minutes"
+    if reservation.status == 'active':
+        if reservation.check_in_timestamp:
+            check_in_ist_str = reservation.check_in_timestamp.replace(tzinfo=pytz.utc).astimezone(IST).strftime('%Y-%m-%d %H:%M:%S (IST)')
+            
+            current_time_utc = datetime.utcnow()
+            duration = current_time_utc - reservation.check_in_timestamp
+            duration_hours = duration.total_seconds() / 3600.0
+            
+            charged_hours = max(1.0, (duration.total_seconds() / 3600.0))
+            
+            hours = int(duration_hours)
+            minutes = int((duration_hours * 60) % 60)
+            estimated_duration_string = f"{hours} hours {minutes} minutes"
 
-        # Calculate estimated cost based on lot price
-        # For actual cost, we will round up to nearest hour.
-        estimated_cost = max(1.0, round(duration_hours)) * reservation.parking_spot.parking_lot.price_per_hour
-        estimated_cost = round(estimated_cost, 2) # Round to 2 decimal places
+            estimated_cost = max(1.0, round(duration_hours)) * reservation.parking_spot.parking_lot.price_per_hour
+            estimated_cost = round(estimated_cost, 2)
+    elif reservation.status == 'completed':
+        if reservation.check_out_timestamp:
+            check_out_ist_str = reservation.check_out_timestamp.replace(tzinfo=pytz.utc).astimezone(IST).strftime('%Y-%m-%d %H:%M (IST)')
+    elif reservation.status == 'cancelled':
+        if reservation.cancellation_timestamp:
+            cancellation_ist_str = reservation.cancellation_timestamp.replace(tzinfo=pytz.utc).astimezone(IST).strftime('%Y-%m-%d %H:%M (IST)')
 
     return render_template('user/release_spot.html', 
                            title='Confirm Park Out', 
                            reservation=reservation,
                            estimated_duration_string=estimated_duration_string,
-                           estimated_cost=estimated_cost)
+                           estimated_cost=estimated_cost,
+                           check_in_ist_str=check_in_ist_str, # Pass IST string for check-in
+                           current_time_ist_str=current_time_ist_str, # Pass IST string for current time
+                           check_out_ist_str=check_out_ist_str, # New: IST string for completed status
+                           cancellation_ist_str=cancellation_ist_str) # New: IST string for cancelled status
 
 @bp.route('/park_out_action/<int:reservation_id>', methods=['POST']) # Renamed route
 @login_required
@@ -235,7 +295,6 @@ def park_out_action(reservation_id):
             duration = reservation.check_out_timestamp - reservation.check_in_timestamp
             duration_hours = duration.total_seconds() / 3600.0
             
-            # Ensure minimum 1 hour charge, round up to nearest hour for final calculation
             charged_hours = max(1.0, round(duration_hours))
             reservation.total_cost = charged_hours * parking_lot.price_per_hour
         else:
@@ -299,7 +358,7 @@ def edit_profile():
         try:
             current_user.username = form.username.data
             current_user.email = form.email.data
-            current_user.full_name = form.full_name.data # Update full_name
+            current_user.full_name = form.full_name.data 
             db.session.commit()
             flash('Your profile has been updated successfully!', 'success')
             if current_user.is_admin:
@@ -321,7 +380,6 @@ def change_password():
     form = ChangePasswordForm()
     if form.validate_on_submit():
         try:
-            # The validate_current_password method in the form already checks the current password
             current_user.set_password(form.new_password.data)
             db.session.commit()
             flash('Your password has been changed successfully!', 'success')
@@ -335,14 +393,3 @@ def change_password():
             db.session.rollback()
             flash(f'An error occurred while changing your password: {e}', 'danger')
     return render_template('user/change_password.html', title='Change Password', form=form)
-
-# @bp.route('/view_lot_spots/<int:lot_id>')
-# @login_required
-# def view_lot_spots(lot_id):
-#     lot = ParkingLot.query.get_or_404(lot_id)
-#     spots = lot.spots.order_by(ParkingSpot.spot_number).all()
-    
-#     # You might want to filter spots by status for user view, e.g., only show available/reserved
-#     # For now, showing all spots in the lot with their status
-    
-#     return render_template('user/view_lot_spots.html', lot=lot, spots=spots, title=f'Spots in {lot.name}')
