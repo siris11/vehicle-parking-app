@@ -19,7 +19,6 @@
             <div class="card-body">
                 <p><strong>ID:</strong> {{ user.id }}</p>
                 <p><strong>Username:</strong> {{ user.username }}</p>
-                <p><strong>Full Name:</strong> {{ user.full_name }}</p> {# ADDED: Display full_name #}
                 <p><strong>Email:</strong> {{ user.email }}</p>
                 <p><strong>Admin Status:</strong> 
                     {% if user.is_admin %}
@@ -28,9 +27,8 @@
                         <span class="badge bg-secondary text-white">No</span>
                     {% endif %}
                 </p>
-                {# user.reservations.count() will count all reservations including completed/cancelled. #}
-                {# If you only want active/pending, you'd calculate this in the route. #}
-                <p><strong>Total Reservations (All Statuses):</strong> {{ user.reservations.count() }}</p> 
+                <p><strong>Total Reservations:</strong> {{ user.reservations.count() }}</p>
+                {# Add more user details here if needed, e.g., creation date #}
             </div>
         </div>
     </div>
@@ -46,63 +44,68 @@
                 <th>Spot Number</th>
                 <th>Parking Lot</th>
                 <th>Vehicle Number</th>
-                <th>Booked At</th> 
-                <th>Check-in Time</th> 
-                <th>Check-out Time</th> 
-                <th>Status</th> 
+                <th>Booked At</th> {# Changed from Parked At to Booked At for clarity #}
+                <th>Check-in At</th> {# Added Check-in At #}
+                <th>Left At</th>
+                <th>Status</th>
                 <th>Total Cost</th>
             </tr>
         </thead>
         <tbody>
-            {% for reservation in reservations %}
+            {# Loop through the 'reservations' list which now contains pre-formatted strings #}
+            {% for res in reservations %}
             <tr>
-                <td>{{ reservation.id }}</td>
+                <td>{{ res.id }}</td>
                 <td>
-                    {% if reservation.parking_spot %}
-                        <a href="{{ url_for('admin.view_spot_details', spot_id=reservation.spot_id) }}">{{ reservation.parking_spot.spot_number }}</a>
+                    {% if res.parking_spot %}
+                        <a href="{{ url_for('admin.view_spot_details', spot_id=res.parking_spot.id) }}">{{ res.parking_spot.spot_number }}</a>
                     {% else %}
                         N/A (Spot Deleted)
                     {% endif %}
                 </td>
                 <td>
-                    {% if reservation.parking_spot and reservation.parking_spot.parking_lot %}
-                        <a href="{{ url_for('admin.edit_parking_lot', lot_id=reservation.parking_spot.parking_lot.id) }}">{{ reservation.parking_spot.parking_lot.name }}</a>
+                    {% if res.parking_spot and res.parking_spot.parking_lot %}
+                        <a href="{{ url_for('admin.edit_parking_lot', lot_id=res.parking_spot.parking_lot.id) }}">{{ res.parking_spot.parking_lot.name }}</a>
                     {% else %}
                         N/A (Lot/Spot Deleted)
                     {% endif %}
                 </td>
-                <td>{{ reservation.vehicle_number if reservation.vehicle_number else 'N/A' }}</td>
-                <td>{{ reservation.booking_timestamp.strftime('%Y-%m-%d %H:%M') }}</td> 
+                <td>{{ res.vehicle_number if res.vehicle_number else 'N/A' }}</td>
+                {# MODIFIED: Use the IST string for booking timestamp #}
+                <td>{{ res.booking_timestamp_ist_str }}</td>
                 <td>
-                    {% if reservation.check_in_timestamp %} {# NEW #}
-                        {{ reservation.check_in_timestamp.strftime('%Y-%m-%d %H:%M') }}
+                    {# NEW: Display Check-in timestamp if available, otherwise N/A #}
+                    {% if res.check_in_timestamp_ist_str %}
+                        {{ res.check_in_timestamp_ist_str }}
                     {% else %}
                         <span class="text-muted">N/A</span>
                     {% endif %}
                 </td>
                 <td>
-                        {{ reservation.check_out_timestamp.strftime('%Y-%m-%d %H:%M') }}
+                    {# MODIFIED: Use the IST string for check_out timestamp #}
+                    {% if res.check_out_timestamp_ist_str %}
+                        {{ res.check_out_timestamp_ist_str }}
                     {% else %}
-                        <span class="badge bg-primary text-white">{{ reservation.status | title }}</span> {# Show status if not checked out #}
+                        <span class="badge bg-primary text-white">{{ res.status | title }}</span> {# Show status if not left yet #}
                     {% endif %}
                 </td>
                 <td>
                     {# Display status as a badge #}
-                    {% if reservation.status == 'active' %}
-                        <span class="badge bg-success text-white">{{ reservation.status | title }}</span>
-                    {% elif reservation.status == 'pending' %}
-                        <span class="badge bg-warning text-dark">{{ reservation.status | title }}</span>
-                    {% elif reservation.status == 'completed' %}
-                        <span class="badge bg-info text-dark">{{ reservation.status | title }}</span>
-                    {% elif reservation.status == 'cancelled' %}
-                        <span class="badge bg-danger text-white">{{ reservation.status | title }}</span>
+                    {% if res.status == 'active' %}
+                        <span class="badge bg-success text-white">{{ res.status | title }}</span>
+                    {% elif res.status == 'pending' %}
+                        <span class="badge bg-warning text-dark">{{ res.status | title }}</span>
+                    {% elif res.status == 'completed' %}
+                        <span class="badge bg-info text-dark">{{ res.status | title }}</span>
+                    {% elif res.status == 'cancelled' %}
+                        <span class="badge bg-danger text-white">{{ res.status | title }}</span>
                     {% else %}
-                        <span class="badge bg-secondary text-white">{{ reservation.status | title }}</span>
+                        <span class="badge bg-secondary text-white">{{ res.status | title }}</span>
                     {% endif %}
                 </td>
                 <td>
-                    {% if reservation.total_cost is not none %}
-                        ₹{{ "%.2f"|format(reservation.total_cost) }}
+                    {% if res.total_cost is not none %}
+                        ₹{{ "%.2f"|format(res.total_cost) }}
                     {% else %}
                         <span class="text-muted">N/A</span> {# For pending/active bookings #}
                     {% endif %}

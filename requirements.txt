@@ -7,3 +7,4 @@ email_validator
 Werkzeug
 MarkupSafe
 Flask-Bootstrap
+pytz

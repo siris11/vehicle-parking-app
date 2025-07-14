@@ -27,17 +27,6 @@
         </p>
         <p><strong>Parking Lot:</strong> <a href="{{ url_for('admin.view_lot_spots', lot_id=spot.parking_lot.id) }}">{{ spot.parking_lot.name }}</a></p>
         <p><strong>Price Per Hour for this Lot:</strong> ₹{{ "%.2f"|format(spot.parking_lot.price_per_hour) }}</p>
-    </div>
-    {# Only allow delete if spot is Available and has no active/pending reservation #}
-    {# The `delete_spot` route already checks for active/pending reservations and status #}
-    {% if spot.status == 'Available' %}
-    <div class="card-footer">
-        <form action="{{ url_for('admin.delete_spot', spot_id=spot.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to permanently delete this spot? This will also reduce the lot capacity.');">
-            <button type="submit" class="btn btn-danger btn-sm">Delete This Spot</button>
-        </form>
-    </div>
-    {% endif %}
-</div>
 
 {# Checking for 'Occupied' status and the existence of an active reservation #}
 {% if spot.status == 'Occupied' and reservation %}
@@ -49,7 +38,10 @@
             <p><strong>Reserved By:</strong> {{ reservation.tenant.username }} (User ID: <a href="{{ url_for('admin.user_details', user_id=reservation.tenant.id) }}">{{ reservation.tenant.id }}</a>)</p>
             <p><strong>Full Name:</strong> {{ reservation.tenant.full_name }}</p>
             <p><strong>Email:</strong> {{ reservation.tenant.email }}</p>
-            <p><strong>Check-in Timestamp:</strong> {{ reservation.check_in_timestamp.strftime('%Y-%m-%d %H:%M:%S') }} (UTC)</p>
+            {# MODIFIED: Use IST string from admin.py #}
+            <p><strong>Parked At:</strong> {{ parked_at_ist_str }}</p>
+            {# NEW: Display current time in IST #}
+            <p><strong>Current Time:</strong> {{ current_time_ist_str }}</p>
             <p><strong>Vehicle Number:</strong> {{ reservation.vehicle_number if reservation.vehicle_number else 'Not Provided' }}</p>
             <p><strong>Reservation Status:</strong> <span class="badge bg-success text-white">{{ reservation.status | title }}</span></p>
         </div>
@@ -69,7 +61,8 @@
             <p><strong>Reserved By:</strong> {{ reservation.tenant.username }} (User ID: <a href="{{ url_for('admin.user_details', user_id=reservation.tenant.id) }}">{{ reservation.tenant.id }}</a>)</p>
             <p><strong>Full Name:</strong> {{ reservation.tenant.full_name }}</p>
             <p><strong>Email:</strong> {{ reservation.tenant.email }}</p>
-            <p><strong>Booking Timestamp:</strong> {{ reservation.booking_timestamp.strftime('%Y-%m-%d %H:%M:%S') }} (UTC)</p>
+            {# MODIFIED: Use IST string from admin.py #}
+            <p><strong>Booking Timestamp:</strong> {{ parked_at_ist_str }}</p> {# parked_at_ist_str holds booking_timestamp for active/pending #}
             <p><strong>Vehicle Number:</strong> {{ reservation.vehicle_number if reservation.vehicle_number else 'Not Provided' }}</p>
             <p><strong>Reservation Status:</strong> <span class="badge bg-warning text-dark">{{ reservation.status | title }}</span></p>
         </div>
@@ -82,8 +75,8 @@
 {% endif %}
 
 <h4 class="mt-4">Reservation History for this Spot</h4>
-{# Order by booking_timestamp #}
-{% if spot.spot_reservations.order_by(Reservation.booking_timestamp.desc()).all() %}
+{# MODIFIED: Loop through reservations_history list passed from admin.py #}
+{% if reservations_history %}
     <table class="table table-sm table-hover mt-2">
         <thead>
             <tr>
@@ -97,49 +90,50 @@
             </tr>
         </thead>
         <tbody>
-            {# Loop through all reservations for this spot #}
-            {% for res in spot.spot_reservations.order_by(Reservation.booking_timestamp.desc()).all() %} {# Corrected to spot_reservations here #}
+            {# Loop through the pre-formatted history #}
+            {% for res_hist in reservations_history %} 
                 <tr>
                     <td>
-                        {% if res.tenant %} 
-                            <a href="{{ url_for('admin.user_details', user_id=res.tenant.id) }}">{{ res.tenant.username }}</a> 
+                        {% if res_hist.tenant %} 
+                            <a href="{{ url_for('admin.user_details', user_id=res_hist.tenant.id) }}">{{ res_hist.tenant.username }}</a> 
                         {% else %}
                             N/A (User Deleted)
                         {% endif %}
                     </td>
-                    <td>{{ res.vehicle_number if res.vehicle_number else 'N/A' }}</td>
-                    <td>{{ res.booking_timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ res_hist.vehicle_number if res_hist.vehicle_number else 'N/A' }}</td>
+                    {# MODIFIED: Use IST string from admin.py #}
+                    <td>{{ res_hist.booking_timestamp_ist_str }}</td>
                     <td>
-                        {% if res.check_in_timestamp %}
-                            {{ res.check_in_timestamp.strftime('%Y-%m-%d %H:%M') }}
+                        {% if res_hist.check_in_timestamp_ist_str %}
+                            {{ res_hist.check_in_timestamp_ist_str }}
                         {% else %}
                             <span class="text-muted">N/A</span>
                         {% endif %}
                     </td>
                     <td>
-                        {% if res.check_out_timestamp %}
-                            {{ res.check_out_timestamp.strftime('%Y-%m-%d %H:%M') }}
+                        {% if res_hist.check_out_timestamp_ist_str %}
+                            {{ res_hist.check_out_timestamp_ist_str }}
                         {% else %}
                             <span class="text-muted">N/A</span> {# For active/pending #}
                         {% endif %}
                     </td>
                     <td>
                         {# Display status as a badge #}
-                        {% if res.status == 'active' %}
-                            <span class="badge bg-success text-white">{{ res.status | title }}</span>
-                        {% elif res.status == 'pending' %}
-                            <span class="badge bg-warning text-dark">{{ res.status | title }}</span>
-                        {% elif res.status == 'completed' %}
-                            <span class="badge bg-info text-dark">{{ res.status | title }}</span>
-                        {% elif res.status == 'cancelled' %}
-                            <span class="badge bg-danger text-white">{{ res.status | title }}</span>
+                        {% if res_hist.status == 'active' %}
+                            <span class="badge bg-success text-white">{{ res_hist.status | title }}</span>
+                        {% elif res_hist.status == 'pending' %}
+                            <span class="badge bg-warning text-dark">{{ res_hist.status | title }}</span>
+                        {% elif res_hist.status == 'completed' %}
+                            <span class="badge bg-info text-dark">{{ res_hist.status | title }}</span>
+                        {% elif res_hist.status == 'cancelled' %}
+                            <span class="badge bg-danger text-white">{{ res_hist.status | title }}</span>
                         {% else %}
-                            <span class="badge bg-secondary text-white">{{ res.status | title }}</span>
+                            <span class="badge bg-secondary text-white">{{ res_hist.status | title }}</span>
                         {% endif %}
                     </td>
                     <td>
-                        {% if res.total_cost is not none %}
-                            ₹{{ "%.2f"|format(res.total_cost) }}
+                        {% if res_hist.total_cost is not none %}
+                            ₹{{ "%.2f"|format(res_hist.total_cost) }}
                         {% else %}
                             <span class="text-muted">N/A</span> {# For pending/active bookings #}
                         {% endif %}

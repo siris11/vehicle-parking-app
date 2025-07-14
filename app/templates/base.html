@@ -2,25 +2,27 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=2.0">
     {% block head_meta %}{% endblock %}
     <title>{% block title %}{{ title|default('Vehicle Parking App') }}{% endblock %}</title>
     {{ bootstrap.load_css() }}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     {% block head_css %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4"> 
         <div class="container">
-            <a class="navbar-brand" href="{% if current_user.is_authenticated %}{% if current_user.is_admin %}{{ url_for('admin.dashboard') }}{% else %}{{ url_for('user.dashboard') }}{% endif %}{% else %}{{ url_for('auth.login') }}{% endif %}">ParkNxt</a>
+            <a class="navbar-brand" href="{% if current_user.is_authenticated %}{% if current_user.is_admin %}{{ url_for('admin.dashboard') }}{% else %}{{ url_for('user.dashboard') }}{% endif %}{% else %}{{ url_for('routes.index') }}{% endif %}">ParkNxt</a> 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% if current_user.is_authenticated %}{% if current_user.is_admin %}{{ url_for('admin.dashboard') }}{% else %}{{ url_for('user.dashboard') }}{% endif %}{% else %}{{ url_for('auth.login') }}{% endif %}">Home</a>
+                        {# Corrected endpoint: admin.dashboard and user.dashboard #}
+                        <a class="nav-link" href="{% if current_user.is_authenticated %}{% if current_user.is_admin %}{{ url_for('admin.dashboard') }}{% else %}{{ url_for('user.dashboard') }}{% endif %}{% else %}{{ url_for('routes.index') }}{% endif %}">Home</a>
                     </li>
                     {% if current_user.is_authenticated %}
                         {% if current_user.is_admin %}
@@ -29,7 +31,7 @@
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.list_parking_lots') }}">Manage Lots</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.list_users') }}">View Users</a></li>
                         {% else %}
-                            {# User Links #}
+                            {# Users #}
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('user.dashboard') }}">User Dashboard</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('user.dashboard') }}#search-lot">Book Parking</a></li>
                         {% endif %}
@@ -39,14 +41,18 @@
                     {% if current_user.is_authenticated %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-person-circle me-1"></i> {{ current_user.full_name if current_user.full_name else current_user.username }}
+                                Welcome, {{ current_user.username }}!
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                                 {% if current_user.is_admin %}
-                                    <li><a class="dropdown-item" href="{{ url_for('admin.edit_profile') }}">Edit Profile</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('admin.change_password') }}">Change Password</a></li>
-                                {% else %}
+                    
                                     <li><a class="dropdown-item" href="{{ url_for('user.edit_profile') }}">Edit Profile</a></li>
+            
+                                    <li><a class="dropdown-item" href="{{ url_for('user.change_password') }}">Change Password</a></li>
+                                {% else %}
+                                    {# Corrected endpoint: user.edit_profile #}
+                                    <li><a class="dropdown-item" href="{{ url_for('user.edit_profile') }}">Edit Profile</a></li>
+                                    {# Corrected endpoint: user.change_password #}
                                     <li><a class="dropdown-item" href="{{ url_for('user.change_password') }}">Change Password</a></li>
                                 {% endif %}
                                 <li><hr class="dropdown-divider"></li>
@@ -77,11 +83,11 @@
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="footer mt-auto py-3 bg-light">
+    <!-- <footer class="footer mt-auto py-3 bg-light"> {# Footer uses light background #}
         <div class="container text-center">
-            <span class="text-muted">ParkNxt</span>
+            <span class="text-muted">ParkNxt &copy; {{ datetime.utcnow().year }}</span> 
         </div>
-    </footer>
+    </footer> -->
 
     {{ bootstrap.load_js() }}
     {% block scripts %}{% endblock %}
