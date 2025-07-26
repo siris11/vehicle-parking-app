@@ -4,8 +4,8 @@
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">{{ title }} (Lot: <a href="{{ url_for('admin.view_lot_spots', lot_id=spot.parking_lot.id) }}">{{ spot.parking_lot.name }}</a>)</h1>
-    <a href="{{ url_for('admin.view_lot_spots', lot_id=spot.parking_lot.id) }}" class="btn btn-sm btn-outline-info">Back to Lot Overview</a>
+    <h1 class="h2">{{ title }} in <a href="{{ url_for('admin.view_lot_spots', lot_id=spot.parking_lot.id) }}" class ="text-secondary">{{ spot.parking_lot.name }}</a></h1>
+    <a href="{{ url_for('admin.view_lot_spots', lot_id=spot.parking_lot.id) }}" class="btn btn-outline-secondary">Back to Lot Overview</a>
 </div>
 
 <div class="card">

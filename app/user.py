@@ -263,10 +263,10 @@ def park_out_page(reservation_id):
                            reservation=reservation,
                            estimated_duration_string=estimated_duration_string,
                            estimated_cost=estimated_cost,
-                           check_in_ist_str=check_in_ist_str, # Pass IST string for check-in
-                           current_time_ist_str=current_time_ist_str, # Pass IST string for current time
-                           check_out_ist_str=check_out_ist_str, # New: IST string for completed status
-                           cancellation_ist_str=cancellation_ist_str) # New: IST string for cancelled status
+                           check_in_ist_str=check_in_ist_str, 
+                           current_time_ist_str=current_time_ist_str,
+                           check_out_ist_str=check_out_ist_str, 
+                           cancellation_ist_str=cancellation_ist_str) 
 
 @bp.route('/park_out_action/<int:reservation_id>', methods=['POST']) # Renamed route
 @login_required

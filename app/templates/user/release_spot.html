@@ -42,12 +42,10 @@
                         <p><strong>Vehicle Number:</strong> {{ reservation.vehicle_number if reservation.vehicle_number else 'N/A' }}</p>
                         <p>
                             <strong>Parked At:</strong> 
-                            {# MODIFIED: Use the IST string passed from user.py #}
                             {{ check_in_ist_str }}
                         </p>
                         <p>
-                            <strong>Current Time:</strong> 
-                            {# MODIFIED: Use the IST string passed from user.py #}
+                            <strong>Current Time:</strong>
                             {{ current_time_ist_str }}
                         </p>
                         <p>
