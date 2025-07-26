@@ -11,7 +11,7 @@
             
             <div class="card mb-4 shadow-sm"> 
                 <div class="card-header bg-light"> 
-                    <h5 class="card-title mb-0 text-primary">Booking Details for Parking Lot</h5>
+                    <h5 class="card-title mb-0 text-light">Booking Details for Parking Lot</h5>
                 </div>
                 <div class="card-body">
                     <p class="card-text">
@@ -37,10 +37,9 @@
             {% if allocated_spot %}
                 <div class="card shadow-sm"> 
                     <div class="card-header bg-light"> 
-                        <h5 class="card-title mb-0 text-primary">Enter Your Vehicle Number to Confirm Booking</h5> 
+                        <h5 class="card-title mb-0 text-light">Enter Your Vehicle Number to Confirm Booking</h5> 
                     </div>
                     <div class="card-body">
-                        {# The form action should now point to the /lot/<int:lot_id>/book route #}
                         <form method="POST" action="{{ url_for('user.book_spot', lot_id=lot.id) }}" novalidate>
                             {{ form.hidden_tag() }} 
                             
@@ -59,7 +58,7 @@
                 <div class="alert alert-danger shadow-sm" role="alert"> 
                     Cannot proceed with booking: No available spots in {{ lot.name }}.
                 </div>
-                <div class="text-center mt-3"> {# Added mt-3 for spacing #}
+                <div class="text-center mt-3">
                     <a href="{{ url_for('user.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
                 </div>
             {% endif %}

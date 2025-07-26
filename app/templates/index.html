@@ -1,14 +1,13 @@
 {% extends "base.html" %}
-
-{% block title %}Welcome to ParkNxt{% endblock %}
+{% block title %}ParkNxt{% endblock %}
 
 {% block content %}
-<div class="container text-center landing-hero-section"> 
+<div class="container text-center landing-hero-section mb-5"> 
     <div class="centre mb-3">
         <span class="logo-primary">Park</span><span class="logo-secondary">Nxt</span>
     </div>
     <p class="lead text-dark">Your seamless solution for smart parking management.</p>
-    <p class="text-muted">Find and book parking spots with ease.</p>
+    <p class="text-muted">Find, book, and park effortlessly.</p>
     <div class="mt-4">
         <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg me-2">Login</a>
         <a href="{{ url_for('auth.register') }}" class="btn btn-outline-primary btn-lg">Register</a>
@@ -18,7 +17,7 @@
 <div class="container py-5">
     <h2 class="text-center text-primary mb-4">Key Features</h2>
     <div class="row text-center">
-        <div class="col-md-4 mb-4">
+        <div class="col-md-6 mb-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
                     <i class="bi bi-geo-alt-fill text-primary fs-1 mb-3"></i>
@@ -27,21 +26,12 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4 mb-4">
+        <div class="col-md-6 mb-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
                     <i class="bi bi-calendar-check-fill text-primary fs-1 mb-3"></i>
                     <h5 class="card-title text-primary">Hassle-Free Booking</h5>
                     <p class="card-text text-dark">Reserve your spot in advance with a few clicks.</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <i class="bi bi-credit-card-fill text-primary fs-1 mb-3"></i>
-                    <h5 class="card-title text-primary">Secure Payments</h5>
-                    <p class="card-text text-dark">Pay conveniently and securely through the app.</p>
                 </div>
             </div>
         </div>

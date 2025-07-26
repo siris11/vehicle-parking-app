@@ -10,7 +10,7 @@
 
 <div class="card">
     <div class="card-header">
-        Spot Information
+        Spot Info
     </div>
     <div class="card-body">
         <p><strong>Spot Number:</strong> {{ spot.spot_number }}</p>
@@ -22,7 +22,7 @@
             {% elif spot.status == 'Reserved' %}
                 <span class="badge bg-warning text-dark">Reserved</span>
             {% else %}
-                <span class="badge bg-info">{{ spot.status }}</span> {# Fallback for unexpected status #}
+                <span class="badge bg-info">{{ spot.status }}</span> 
             {% endif %}
         </p>
         <p><strong>Parking Lot:</strong> <a href="{{ url_for('admin.view_lot_spots', lot_id=spot.parking_lot.id) }}">{{ spot.parking_lot.name }}</a></p>
@@ -46,7 +46,7 @@
     </div>
 {% elif spot.status == 'Occupied' and not reservation %}
     <div class="alert alert-warning mt-4" role="alert">
-        This spot is marked Occupied, but no active reservation record was found. This might indicate an inconsistency.
+        This spot is marked Occupied, but no active reservation record was found.
     </div>
 
 {% elif spot.status == 'Reserved' and reservation %}
@@ -58,7 +58,6 @@
             <p><strong>Reserved By:</strong> {{ reservation.tenant.username }} (User ID: <a href="{{ url_for('admin.user_details', user_id=reservation.tenant.id) }}">{{ reservation.tenant.id }}</a>)</p>
             <p><strong>Full Name:</strong> {{ reservation.tenant.full_name }}</p>
             <p><strong>Email:</strong> {{ reservation.tenant.email }}</p>
-            {# MODIFIED: Use IST string from admin.py #}
             <p><strong>Booking Timestamp:</strong> {{ parked_at_ist_str }}</p> {# parked_at_ist_str holds booking_timestamp for active/pending #}
             <p><strong>Vehicle Number:</strong> {{ reservation.vehicle_number if reservation.vehicle_number else 'Not Provided' }}</p>
             <p><strong>Reservation Status:</strong> <span class="badge bg-warning text-dark">{{ reservation.status | title }}</span></p>
@@ -66,12 +65,13 @@
     </div>
 
 {% elif spot.status == 'Available' %}
-    <div class="alert alert-info mt-4" role="alert">
+    <br>
+    <span class="alert alert-info mt-4" role="alert">
         This spot is currently available.
-    </div>
+    </span>
 {% endif %}
 
-<h4 class="mt-4">Reservation History for this Spot</h4>
+<h4 class="mt-5">Reservation History for this Spot</h4>
 {% if reservations_history %}
     <table class="table table-sm table-hover mt-2">
         <thead>

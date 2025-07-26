@@ -33,6 +33,7 @@
     </div>
 </div>
 
+{% if not user.is_admin %}
 <h3 class="mt-4 mb-3">Reservation History</h3>
 {% if reservations %}
 <div class="table-responsive">
@@ -113,5 +114,6 @@
 <div class="alert alert-info" role="alert">
     This user has no reservations yet.
 </div>
+{% endif %}
 {% endif %}
 {% endblock %}

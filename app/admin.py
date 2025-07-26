@@ -334,7 +334,7 @@ def delete_spot(spot_id):
 @login_required
 @admin_required
 def list_users():
-    users = User.query.filter_by(is_admin=False).order_by(User.username).all()
+    users = User.query.order_by(User.username).all()
     return render_template('admin/list_users.html', users=users, title='Registered Users')
 
 

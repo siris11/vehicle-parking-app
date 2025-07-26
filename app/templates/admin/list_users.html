@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-
 {% block title %}{{ title }} - {{ super() }}{% endblock %}
 
 {% block content %}
@@ -30,7 +29,6 @@
                 <td>{{ user_item.reservations.count() }}</td>
                 <td>
                     <a href="{{ url_for('admin.user_details', user_id=user_item.id) }}" class="btn btn-sm btn-outline-info">View Details</a> 
-                    {# Add other actions like disable user if needed #}
                 </td>
             </tr>
             {% endfor %}
@@ -39,7 +37,7 @@
 </div>
 {% else %}
 <div class="alert alert-info" role="alert">
-    No registered users found other than Admin.
+    No users found!
 </div>
 {% endif %}
 {% endblock %}
