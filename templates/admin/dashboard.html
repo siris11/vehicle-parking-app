@@ -9,8 +9,8 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-2 pb-2 border-bottom">
     <h1 class="h2 text-primary">Admin Dashboard</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="{{ url_for('admin.create_parking_lot') }}" class="btn btn-sm btn-outline-primary">
-            <span data-feather="plus-circle" class="align-text-bottom"></span>
+        <a href="{{ url_for('admin.create_parking_lot') }}" class="btn btn-sm btn-outline-primary fs-6">
+            <span data-feather="plus-circle" class="align-text-bottom me-1"></span>
             Create New Parking Lot
         </a>
     </div>
@@ -138,16 +138,16 @@
         <tbody>
             {% for lot in lots %}
             <tr>
-                <td><a href="{{ url_for('admin.view_lot_spots', lot_id=lot.id) }}" class="text-primary">{{ lot.name }}</a></td> {# Link uses primary accent #}
+                <td><a href="{{ url_for('admin.view_lot_spots', lot_id=lot.id) }}" class="text-primary">{{ lot.name }}</a></td> 
                 <td>{{ lot.address if lot.address else 'N/A' }}</td>
                 <td>{{ lot.maximum_capacity }}</td>
-                <td><span class="badge bg-danger">{{ lot.spots.filter_by(status='Occupied').count() }}</span></td>
-                <td><span class="badge bg-info">{{ lot.spots.filter_by(status='Reserved').count() }}</span></td>
-                <td><span class="badge bg-success">{{ lot.spots.filter_by(status='Available').count() }}</span></td>
+                <td><span class="text-danger fw-bold">{{ lot.spots.filter_by(status='Occupied').count() }}</span></td>
+                <td><span class="text-info fw-bold">{{ lot.spots.filter_by(status='Reserved').count() }}</span></td>
+                <td><span class="text-success fw-bold">{{ lot.spots.filter_by(status='Available').count() }}</span></td>
                 <td>₹{{ "%.2f"|format(lot.price_per_hour) }}</td>
-                <td>
+                <td class="text-nowrap">
                     <a href="{{ url_for('admin.edit_parking_lot', lot_id=lot.id) }}" class="btn btn-sm btn-outline-primary me-1">Edit</a>
-                    <a href="{{ url_for('admin.view_lot_spots', lot_id=lot.id) }}" class="btn btn-sm btn-primary">View Spots</a>
+                    <a href="{{ url_for('admin.view_lot_spots', lot_id=lot.id) }}" class="btn btn-sm btn-outline-primary">View Spots</a>
                 </td>
             </tr>
             {% else %}
