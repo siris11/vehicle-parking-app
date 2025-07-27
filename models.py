@@ -1,7 +1,9 @@
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
-from app import db
+from flask_sqlalchemy import SQLAlchemy
+
+db = SQLAlchemy()
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -58,7 +60,6 @@ class Reservation(db.Model):
     check_in_timestamp = db.Column(db.DateTime, nullable=True)
     check_out_timestamp = db.Column(db.DateTime, nullable=True)
     total_cost = db.Column(db.Float, nullable=True)
-    #'pending', 'active', 'completed', 'cancelled'
     status = db.Column(db.String(20), default='pending', nullable=False)
 
     def __repr__(self):

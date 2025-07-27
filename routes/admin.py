@@ -1,9 +1,8 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import current_user, login_required
 from functools import wraps
-from .forms import ParkingLotForm
-from .models import ParkingLot, ParkingSpot, User, Reservation 
-from . import db
+from forms import ParkingLotForm
+from models import db, ParkingLot, ParkingSpot, User, Reservation 
 from datetime import datetime, timedelta
 from sqlalchemy import func 
 import pytz 

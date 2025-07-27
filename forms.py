@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, IntegerField, FloatField, TextAreaField, SelectField
 from wtforms.validators import DataRequired, Email, EqualTo, ValidationError, NumberRange, Length, Regexp
 from flask_login import current_user
-from .models import User, ParkingLot
+from models import User, ParkingLot
 
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
@@ -79,7 +79,7 @@ class EditProfileForm(FlaskForm):
         if username.data != self.original_username:
             user = User.query.filter_by(username=username.data).first()
             if user:
-                raise ValidationError('This username is already taken. Please choose a different one.')
+                raise ValidationError('This username already exists. Please choose a different one.')
 
     def validate_email(self, email):
         if email.data != self.original_email:

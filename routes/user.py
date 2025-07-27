@@ -1,9 +1,8 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import current_user, login_required
 from datetime import datetime, timedelta
-from .forms import BookSpotForm, CheckInForm, ParkOutForm, EditProfileForm, ChangePasswordForm 
-from .models import ParkingLot, ParkingSpot, User, Reservation 
-from . import db
+from forms import BookSpotForm, CheckInForm, ParkOutForm, EditProfileForm, ChangePasswordForm 
+from models import ParkingLot, ParkingSpot, User, Reservation, db
 from sqlalchemy import or_ 
 from werkzeug.security import generate_password_hash, check_password_hash 
 import pytz 
@@ -345,14 +344,12 @@ def cancel_reservation(reservation_id):
 @bp.route('/edit_profile', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
-    # Pass current user's username and email to the form for validation
     form = EditProfileForm(original_username=current_user.username, original_email=current_user.email)
     
-    # Populate form fields with current user data on GET request
     if request.method == 'GET':
         form.username.data = current_user.username
         form.email.data = current_user.email
-        form.full_name.data = current_user.full_name # Populate full_name
+        form.full_name.data = current_user.full_name 
 
     if form.validate_on_submit():
         try:
@@ -362,10 +359,8 @@ def edit_profile():
             db.session.commit()
             flash('Your profile has been updated successfully!', 'success')
             if current_user.is_admin:
-                # Redirect admin to the admin dashboard
                 return redirect(url_for('admin.dashboard'))
             else:
-                # Redirect regular user to their dashboard
                 return redirect(url_for('user.dashboard'))
     
         except Exception as e:
@@ -383,11 +378,9 @@ def change_password():
             current_user.set_password(form.new_password.data)
             db.session.commit()
             flash('Your password has been changed successfully!', 'success')
-            if current_user.is_admin:
-                # Redirect admin to the admin dashboard
+            if current_user.is_admin:              
                 return redirect(url_for('admin.dashboard'))
             else:
-                # Redirect regular user to their dashboard
                 return redirect(url_for('user.dashboard'))
         except Exception as e:
             db.session.rollback()

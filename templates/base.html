@@ -14,7 +14,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4"> 
         <div class="container">
-           <a class="navbar-brand navbar-logo" href="{% if current_user.is_authenticated %}{% if current_user.is_admin %}{{ url_for('admin.dashboard') }}{% else %}{{ url_for('user.dashboard') }}{% endif %}{% else %}{{ url_for('routes.index') }}{% endif %}">
+           <a class="navbar-brand navbar-logo" href="{% if current_user.is_authenticated %}{% if current_user.is_admin %}{{ url_for('admin.dashboard') }}{% else %}{{ url_for('user.dashboard') }}{% endif %}{% else %}{{ url_for('main.index') }}{% endif %}">
                <span class="logo-primary">Park</span><span class="logo-secondary">Nxt</span>
            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -23,7 +23,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% if current_user.is_authenticated %}{% if current_user.is_admin %}{{ url_for('admin.dashboard') }}{% else %}{{ url_for('user.dashboard') }}{% endif %}{% else %}{{ url_for('routes.index') }}{% endif %}">Home</a>
+                        <a class="nav-link" href="{% if current_user.is_authenticated %}{% if current_user.is_admin %}{{ url_for('admin.dashboard') }}{% else %}{{ url_for('user.dashboard') }}{% endif %}{% else %}{{ url_for('main.index') }}{% endif %}">Home</a>
                     </li>
                     {% if current_user.is_authenticated %}
                         {% if current_user.is_admin %}

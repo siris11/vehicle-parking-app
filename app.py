@@ -1,17 +1,15 @@
 import os
-from flask import Flask, redirect, url_for
-from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, redirect, url_for, render_template
 from flask_login import LoginManager
 from flask_bootstrap import Bootstrap5
 from datetime import datetime
+from werkzeug.security import generate_password_hash 
+from models import db, User
+from routes import main, auth, admin, user
 
-db = SQLAlchemy()
 login_manager = LoginManager()
-login_manager.login_view = 'auth.login'
-login_manager.login_message_category = 'info' 
 
 def create_app(config_class=None):
-    """Application factory function."""
     app = Flask(__name__, instance_relative_config=True)
 
     app.config.from_mapping(
@@ -31,33 +29,49 @@ def create_app(config_class=None):
     except OSError:
         pass 
 
-    db.init_app(app)
+    db.init_app(app) 
     login_manager.init_app(app)
+    login_manager.login_view = 'auth.login'
+    login_manager.login_message_category = 'info' 
     Bootstrap5(app)
 
     @app.context_processor
     def inject_now():
         return {'datetime': datetime}
 
-    from .models import User 
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
-    
-    from . import routes 
-    from . import auth
-    from . import admin 
-    from . import user
 
-    app.register_blueprint(routes.bp)
+   
+
+    app.register_blueprint(main.bp) 
     app.register_blueprint(auth.bp)
     app.register_blueprint(admin.bp, url_prefix='/admin')
     app.register_blueprint(user.bp, url_prefix='/user') 
    
+    return app
+
+if __name__ == '__main__':
+    app = create_app() 
+
     with app.app_context():
         db.create_all() 
-    @app.route('/')
-    def index():
-        return redirect(url_for('auth.login')) 
+        default_admin_username = 'admin'
+        default_admin_password = 'admin098'
 
-    return app
+        admin_user = User.query.filter_by(username=default_admin_username, is_admin=True).first()
+
+        if not admin_user:
+            new_admin = User(
+                username=default_admin_username, 
+                full_name='admin',
+                email='admin@gmail.com', 
+                password_hash=generate_password_hash(default_admin_password), 
+                is_admin=True
+            )
+            db.session.add(new_admin)
+            db.session.commit()
+            print(f"Default admin user created: username '{default_admin_username}', password '{default_admin_password}'. **Change this password immediately!**")
+
+    app.run(debug=True)
