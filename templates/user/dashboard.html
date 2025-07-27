@@ -33,7 +33,7 @@
             </p>
             <div class="mt-3">
                 {% if current_user_reservation_detail.status == 'pending' %}
-                    <form action="{{ url_for('user.check_in_reservation', reservation_id=current_user_reservation_detail.id) }}" method="POST" class="d-inline">
+                    <form action="{{ url_for('user.check_in_reservation', reservation_id=current_user_reservation_detail.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to check in this spot ?!')">
                         <button type="submit" class="btn btn-success me-2">Check In Now</button>
                     </form>
                     <form action="{{ url_for('user.cancel_reservation', reservation_id=current_user_reservation_detail.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this reservation?');">
@@ -164,9 +164,9 @@
                                     <span class="text-muted">N/A</span>
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class="text-nowrap">
                                 {% if res.status == 'pending' %}
-                                    <form action="{{ url_for('user.check_in_reservation', reservation_id=res.id) }}" method="POST" class="d-inline">
+                                    <form action="{{ url_for('user.check_in_reservation', reservation_id=res.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to check in this spot ?!')">
                                         <button type="submit" class="btn btn-sm btn-success me-1">Check In</button>
                                     </form>
                                     <form action="{{ url_for('user.cancel_reservation', reservation_id=res.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this reservation?');">
