@@ -56,11 +56,9 @@ class BookSpotForm(FlaskForm):
     vehicle_number = StringField('Vehicle Number', validators=[DataRequired(), Length(min=3, max=20)])
     submit = SubmitField('Confirm Booking')
 
-# For the user to confirm they've arrived and parked
 class CheckInForm(FlaskForm):
     submit = SubmitField('Check In Now')
 
-# ParkOutForm
 class ParkOutForm(FlaskForm):
     submit = SubmitField('Park Out & End Session') 
 

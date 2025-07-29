@@ -112,13 +112,13 @@ main {
 }
 
 .card-header {
-    background-color: #f8f9fa; /* Light grey header */
+    background-color: #f8f9fa; 
     border-bottom: 1px solid #e9ecef;
     font-weight: 600;
 }
 .chart-container {
     position: relative;
-    height: 300px; /* Fixed height for charts */
+    height: 300px; 
     width: 100%;
 }
 
@@ -329,7 +329,6 @@ main {
     color: var(--bs-white) !important; 
 }
 
-/* Admin Dashboard Summary Box (Simplified Colors - Light Theme) */
 .card .p-3.border.rounded { 
     background-color: var(--bs-white) !important; 
     color: var(--bs-dark) !important; 
@@ -337,13 +336,11 @@ main {
     box-shadow: 0 2px 6px rgba(0,0,0,.08);
 }
 
-/* Ensure headings and paragraphs within these boxes are dark */
 .card .p-3.border.rounded h5,
 .card .p-3.border.rounded .display-6 {
     color: var(--bs-dark) !important;
 }
 
-/* Use text colors for subtle status cues within the summary boxes */
 .card .p-3.border.rounded.bg-primary h5 { color: var(--bs-primary) !important; } 
 .card .p-3.border.rounded.bg-success h5 { color: var(--bs-success) !important; } 
 .card .p-3.border.rounded.bg-info h5 { color: var(--bs-info) !important; } 
@@ -351,9 +348,9 @@ main {
 .card .p-3.border.rounded.bg-secondary h5 { color: var(--bs-primary) !important; }
 
 .text-primary { color: var(--bs-primary) !important; }
-.text-secondary { color: var(--bs-dark) !important; } /* Secondary text is now dark on light */
+.text-secondary { color: var(--bs-dark) !important; } 
 .text-success { color: var(--bs-success) !important; }
 .text-info { color: var(--bs-info) !important; }
 .text-warning { color: var(--bs-warning) !important; }
 .text-danger { color: var(--bs-danger) !important; }
-.text-muted { color: rgba(46, 51, 56, 0.6) !important; } /* Darker muted text for better visibility */
+.text-muted { color: rgba(46, 51, 56, 0.6) !important; } 

@@ -9,3 +9,4 @@ MarkupSafe
 Flask-Bootstrap
 flask-login
 pytz
+python-dotenv

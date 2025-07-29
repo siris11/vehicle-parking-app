@@ -24,7 +24,7 @@
             <tr>
                 <td>{{ user_item.id }}</td>
                 <td><a href="{{ url_for('admin.user_details', user_id=user_item.id) }}">{{ user_item.username }}</a></td>
-                <td>{{ user_item.full_name if user_item.full_name else 'N/A' }}</td>
+                <td>{{ user_item.full_name if user_item.full_name else 'Not Applicable' }}</td>
                 <td>{{ user_item.email }}</td>
                 <td>{{ user_item.reservations.count() }}</td>
                 <td>

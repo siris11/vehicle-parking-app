@@ -15,7 +15,6 @@ IST = pytz.timezone('Asia/Kolkata')
 def dashboard():
     search_term = request.form.get('search_term') if request.method == 'POST' else request.args.get('search_term')
     
-    # Fetch parking lots - apply search filter if term exists
     if search_term:
         search_pattern = f"%{search_term}%"
         parking_lots = ParkingLot.query.filter(
@@ -30,7 +29,6 @@ def dashboard():
     else:
         parking_lots = ParkingLot.query.order_by(ParkingLot.name).all()
     
-    # Fetch current user's active AND pending reservations
     user_reservations_raw = Reservation.query.filter(
         Reservation.user_id == current_user.id,
         Reservation.status.in_(['pending', 'active', 'completed', 'cancelled'])
@@ -41,10 +39,8 @@ def dashboard():
     current_user_reservation_detail = None 
 
     for res in user_reservations_raw:
-        # Check for active or pending reservation for the alert/detail box
         if res.status in ['pending', 'active'] and not current_user_reservation_detail:
             has_active_or_pending_reservation = True
-            # Prepare details for the single active/pending reservation
             booking_ist_str = res.booking_timestamp.replace(tzinfo=pytz.utc).astimezone(IST).strftime('%Y-%m-%d %H:%M (IST)')
             check_in_ist_str = None
             if res.check_in_timestamp:
@@ -58,11 +54,10 @@ def dashboard():
                 'booking_timestamp_ist_str': booking_ist_str,
                 'check_in_timestamp_ist_str': check_in_ist_str,
                 'status': res.status,
-                'total_cost': res.total_cost, # Will be None for active/pending
-                'res_object': res # Keep the original object for actions
+                'total_cost': res.total_cost, # none for active/pending
+                'res_object': res 
             }
 
-        # Prepare all reservations for the history table
         booking_ist_str_for_table = res.booking_timestamp.replace(tzinfo=pytz.utc).astimezone(IST).strftime('%Y-%m-%d %H:%M (IST)')
         check_in_ist_str_for_table = None
         if res.check_in_timestamp:
@@ -87,23 +82,20 @@ def dashboard():
     check_in_form = CheckInForm() 
     park_out_form = ParkOutForm()
 
-    # --- Data for Charts (User Dashboard) ---
-    # Fetch completed reservations for chart data
     completed_reservations = Reservation.query.filter_by(
         user_id=current_user.id,
         status='completed'
     ).order_by(Reservation.check_out_timestamp.desc()).all()
 
-    # 1. Parking Cost Chart Data (last 10 completed parkings)
+    # last 10 completed parkings
     parking_cost_chart_data = []
-    for res in completed_reservations[:10]: # Take last 10
+    for res in completed_reservations[:10]: 
         if res.total_cost is not None and res.check_out_timestamp:
-            # Convert checkout timestamp to IST for chart labels
             checkout_ist_str = res.check_out_timestamp.replace(tzinfo=pytz.utc).astimezone(IST).strftime('%Y-%m-%d')
             parking_cost_chart_data.append([checkout_ist_str, res.total_cost])
-    parking_cost_chart_data.reverse() # Show oldest first on chart
+    parking_cost_chart_data.reverse()
 
-    # 2. Parking Frequency Chart Data (last 7 days)
+    # Frequency of last 7 days
     parking_frequency_data = {}
     today_utc = datetime.utcnow().date()
     today_ist = datetime.utcnow().replace(tzinfo=pytz.utc).astimezone(IST).date()
@@ -114,15 +106,14 @@ def dashboard():
     
     for res in completed_reservations:
         if res.check_out_timestamp:
-            # Convert check_out_timestamp to IST date for comparison
             checkout_date_ist = res.check_out_timestamp.replace(tzinfo=pytz.utc).astimezone(IST).date()
             if (today_ist - checkout_date_ist).days < 7:
                 date_str = checkout_date_ist.strftime('%Y-%m-%d')
                 parking_frequency_data[date_str] = parking_frequency_data.get(date_str, 0) + 1
     
-    parking_frequency_chart_data = sorted(parking_frequency_data.items()) # Sort by date
+    parking_frequency_chart_data = sorted(parking_frequency_data.items())
 
-    # 3. Most Visited Lots Chart Data (last 10 completed parkings)
+    # 3. Most Visited Lots since 10 days 
     most_visited_lots_raw = {}
     for res in completed_reservations[:10]: # Take last 10
         if res.parking_spot and res.parking_spot.parking_lot:
@@ -135,14 +126,13 @@ def dashboard():
     return render_template('user/dashboard.html', 
                            title='User Dashboard',
                            parking_lots=parking_lots,
-                           user_reservations_table=user_reservations_table, # Pass the modified list for the table
+                           user_reservations_table=user_reservations_table,
                            has_active_or_pending_reservation=has_active_or_pending_reservation,
-                           current_user_reservation_detail=current_user_reservation_detail, # Pass the single detail object
+                           current_user_reservation_detail=current_user_reservation_detail, 
                            book_form=book_form,
                            check_in_form=check_in_form,
                            park_out_form=park_out_form,
-                           search_term=search_term, # Pass search term back to template
-                           # Chart data
+                           search_term=search_term,
                            parking_cost_chart_data=parking_cost_chart_data,
                            parking_frequency_data=parking_frequency_chart_data,
                            most_visited_lots_data=most_visited_lots_data)
@@ -239,14 +229,14 @@ def park_out_page(reservation_id):
             check_in_ist_str = reservation.check_in_timestamp.replace(tzinfo=pytz.utc).astimezone(IST).strftime('%Y-%m-%d %H:%M:%S (IST)')
             
             current_time_utc = datetime.utcnow()
-            duration = current_time_utc - reservation.check_in_timestamp
+            duration = abs(current_time_utc - reservation.check_in_timestamp)
             duration_hours = duration.total_seconds() / 3600.0
             
             charged_hours = max(1.0, (duration.total_seconds() / 3600.0))
             
             hours = int(duration_hours)
-            minutes = int((duration_hours * 60) % 60)
-            estimated_duration_string = f"{hours} hours {minutes} minutes"
+            min = int((duration_hours * 60) % 60)
+            estimated_duration_string = f"{hours} hours {min} minutes"
 
             estimated_cost = max(1.0, round(duration_hours)) * reservation.parking_spot.parking_lot.price_per_hour
             estimated_cost = round(estimated_cost, 2)

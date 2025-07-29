@@ -17,7 +17,6 @@
 </div>
 
 <div class="row">
-    {# Total Parking Lots #}
     <div class="col-lg-2 col-md-4 col-sm-6 mb-3"> 
         <div class="card bg-white text-dark shadow-sm h-100">
             <div class="card-body d-flex flex-column justify-content-between">
@@ -26,7 +25,7 @@
             </div>
         </div>
     </div>
-    {# Total Parking Spots #}
+
     <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
         <div class="card bg-white text-dark shadow-sm h-100">
             <div class="card-body d-flex flex-column justify-content-between">
@@ -35,7 +34,7 @@
             </div>
         </div>
     </div>
-    {# Available Spots #}
+    
     <div class="col-lg-2 col-md-4 col-sm-6 mb-3"> 
         <div class="card bg-white text-dark shadow-sm h-100">
             <div class="card-body d-flex flex-column justify-content-between">
@@ -44,7 +43,7 @@
             </div>
         </div>
     </div>
-    {# Occupied Spots #}
+   
     <div class="col-lg-2 col-md-4 col-sm-6 mb-3"> 
         <div class="card bg-white text-dark shadow-sm h-100">
             <div class="card-body d-flex flex-column justify-content-between">
@@ -53,7 +52,7 @@
             </div>
         </div>
     </div>
-    {# Reserved Spots #}
+
     <div class="col-lg-2 col-md-4 col-sm-6 mb-3"> 
         <div class="card bg-white text-dark shadow-sm h-100">
             <div class="card-body d-flex flex-column justify-content-between">
@@ -62,7 +61,7 @@
             </div>
         </div>
     </div>
-    {# Registered Users #}
+    
     <div class="col-lg-2 col-md-4 col-sm-6 mb-3"> 
         <div class="card bg-white text-dark shadow-sm h-100">
             <div class="card-body d-flex flex-column justify-content-between">
@@ -166,11 +165,9 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Helper function to create charts, including a check for data presence
         function createChart(chartId, type, data, options) {
             const ctx = document.getElementById(chartId);
             if (ctx) {
-                // Check if the dataset has data points
                 const hasData = data.datasets.some(dataset => dataset.data && dataset.data.length > 0 && dataset.data.some(value => value > 0));
 
                 if (hasData) {
@@ -180,9 +177,8 @@
                         options: options
                     });
                 } else {
-                    // Display a message if no data is available
                     const parentDiv = ctx.parentElement;
-                    ctx.remove(); // Remove the canvas element
+                    ctx.remove(); 
                     parentDiv.innerHTML = `<div class="alert alert-info text-center mt-3" role="alert">No data available to display this chart yet.</div>`;
                     parentDiv.style.display = 'flex';
                     parentDiv.style.flexDirection = 'column';
@@ -192,7 +188,7 @@
             }
         }
 
-        // Chart 1: Daily Revenue Trend ]]
+        // Daily Revenue
         const dailyRevenueLabels = JSON.parse('{{ daily_revenue_labels | tojson }}');
         const dailyRevenueAmounts = JSON.parse('{{ daily_revenue_amounts | tojson }}');
 
@@ -201,7 +197,7 @@
             datasets: [{
                 label: 'Revenue (₹)',
                 data: dailyRevenueAmounts,
-                borderColor: 'hsl(280, 70%, 55%)', /* A slightly different accent color for revenue */
+                borderColor: 'hsl(280, 70%, 55%)', 
                 backgroundColor: 'hsla(280, 70%, 55%, 0.2)',
                 borderWidth: 2,
                 fill: true,
@@ -260,7 +256,7 @@
         };
         createChart('dailyRevenueChart', 'line', dailyRevenueData, dailyRevenueOptions);
 
-        // Chart 2: Daily Bookings Trend
+        //Daily Bookings 
         const dailyReservationLabels = JSON.parse('{{ daily_reservation_labels | tojson }}');
         const dailyReservationCounts = JSON.parse('{{ daily_reservation_counts | tojson }}');
 
@@ -300,35 +296,35 @@
                     beginAtZero: true,
                     ticks: {
                         callback: function(value) { if (Number.isInteger(value)) { return value; } },
-                        color: 'var(--bs-dark)' // Chart Y-axis ticks color is dark
+                        color: 'var(--bs-dark)' 
                     },
                     title: {
                         display: true,
                         text: 'Number of Bookings',
-                        color: 'var(--bs-dark)' // Chart Y-axis title color is dark
+                        color: 'var(--bs-dark)'
                     },
                     grid: {
-                        color: 'rgba(0,0,0,0.1)' // Chart Y-axis grid lines are light
+                        color: 'rgba(0,0,0,0.1)' 
                     }
                 },
                 x: {
                     ticks: {
-                        color: 'var(--bs-dark)' // Chart X-axis ticks color is dark
+                        color: 'var(--bs-dark)' 
                     },
                     title: {
                         display: true,
                         text: 'Date',
-                        color: 'var(--bs-dark)' // Chart X-axis title color is dark
+                        color: 'var(--bs-dark)'
                     },
                     grid: {
-                        color: 'rgba(0,0,0,0.1)' // Chart X-axis grid lines are light
+                        color: 'rgba(0,0,0,0.1)' 
                     }
                 }
             }
         };
         createChart('dailyBookingsChart', 'line', dailyBookingsData, dailyBookingsOptions);
 
-        // Chart 3: Parking Spot Status Distribution (Doughnut) 
+        //Parking Spot Statuses
         const availableSpots = JSON.parse('{{ available_spots | tojson }}');
         const occupiedSpots = JSON.parse('{{ occupied_spots | tojson }}');
         const reservedSpots = JSON.parse('{{ reserved_spots | tojson }}');
@@ -371,7 +367,7 @@
         };
         createChart('spotStatusChart', 'doughnut', spotStatusData, spotStatusOptions);
 
-        // Chart4: Reservation Status Breakdown (Bar Chart)
+        // Reservation Status 
         const pendingReservations = JSON.parse('{{ pending_reservations | tojson }}');
         const activeReservations = JSON.parse('{{ active_reservations | tojson }}');
         const completedReservations = JSON.parse('{{ completed_reservations | tojson }}');
@@ -383,10 +379,10 @@
                 label: 'Number of Reservations',
                 data: [pendingReservations, activeReservations, completedReservations, cancelledReservations],
                 backgroundColor: [
-                    'hsl(200, 70%, 45%)',   // info - Cyan
+                    'hsl(200, 70%, 45%)',   
                     'hsl(140, 60%, 40%)',   // success - Green
-                    'hsl(210, 10%, 60%)',   // A neutral light grey for completed
-                    'hsl(0, 70%, 50%)'      // danger - Red
+                    'hsl(210, 10%, 60%)',   
+                    'hsl(0, 70%, 50%)'      
                 ],
                 borderColor: [
                     'hsl(200, 70%, 35%)',
@@ -415,18 +411,18 @@
                     beginAtZero: true,
                     ticks: {
                         callback: function(value) { if (Number.isInteger(value)) { return value; } },
-                        color: 'var(--bs-dark)' // Chart Y-axis ticks color is dark
+                        color: 'var(--bs-dark)' 
                     },
                     grid: {
-                        color: 'rgba(0,0,0,0.1)' // Chart Y-axis grid lines are light
+                        color: 'rgba(0,0,0,0.1)' 
                     }
                 },
                 x: {
                     ticks: {
-                        color: 'var(--bs-dark)' // Chart X-axis ticks color is dark
+                        color: 'var(--bs-dark)' 
                     },
                     grid: {
-                        color: 'rgba(0,0,0,0.1)' // Chart X-axis grid lines are light
+                        color: 'rgba(0,0,0,0.1)' 
                     }
                 }
             }

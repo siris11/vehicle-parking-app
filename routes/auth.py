@@ -23,7 +23,7 @@ def login():
             return redirect(url_for('auth.login'))
         
         login_user(user, remember=form.remember_me.data)
-        flash(f'Welcome back, {user.full_name}!', 'success')
+        flash(f'Welcome, {user.full_name}!', 'success')
         
         next_page = request.args.get('next')
         if not next_page or urlparse(next_page).netloc != '':

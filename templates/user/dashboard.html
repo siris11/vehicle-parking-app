@@ -237,10 +237,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Helper function to safely get data and initialize chart
         function createChart(chartId, type, data, options) {
             const ctx = document.getElementById(chartId);
-            // Check if ctx exists AND if data has labels AND if labels array is not empty
             if (ctx && data && data.labels && data.labels.length > 0) {
                 new Chart(ctx, {
                     type: type,
@@ -248,9 +246,8 @@
                     options: options
                 });
             } else if (ctx) {
-                // Display a message if no data is available
                 const parentDiv = ctx.parentElement;
-                ctx.remove(); // Remove the canvas element
+                ctx.remove(); 
                 parentDiv.innerHTML = `<div class="alert alert-info text-center mt-3" role="alert">No data available to display this chart yet.</div>`;
                 parentDiv.style.display = 'flex';
                 parentDiv.style.flexDirection = 'column';
@@ -259,7 +256,7 @@
             }
         }
 
-        // 1. Parking Cost Chart Data & Options
+        //Parking Cost 
         const parkingCostRawData = JSON.parse('{{ parking_cost_chart_data|tojson }}');
         
         const parkingCostChartData = {
@@ -302,7 +299,7 @@
         createChart('parkingCostChart', 'line', parkingCostChartData, parkingCostChartOptions);
 
 
-        // 2. Parking Frequency Chart Data & Options
+        //Parking Frequency
         const parkingFrequencyRawData = JSON.parse('{{ parking_frequency_data|tojson }}');
 
         const parkingFrequencyChartData = {
@@ -321,7 +318,7 @@
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        stepSize: 1, // Ensure integer ticks for counts
+                        stepSize: 1, 
                         callback: function(value) {
                             if (Number.isInteger(value)) {
                                 return value;
@@ -348,7 +345,7 @@
         createChart('parkingFrequencyChart', 'bar', parkingFrequencyChartData, parkingFrequencyChartOptions);
 
 
-        // 3. Most Visited Lots Chart Data & Options
+        //Most Visited Lots 
         const mostVisitedLotsRawData = JSON.parse('{{ most_visited_lots_data|tojson }}');
 
         const mostVisitedLotsChartData = {

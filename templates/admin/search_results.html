@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2 text-primary">{{ title }}</h1>
+</div>
+
+
+{% if search_category == 'users' %}
+    {% if users_found %}
+    <h3 class="mt-4 mb-3">Users Found ({{ users_found|length }})</h3>
+    <div class="table-responsive mb-4">
+        <table class="table table-striped table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>Admin</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user_item in users_found %}
+                <tr>
+                    <td>{{ user_item.id }}</td>
+                    <td><a href="{{ url_for('admin.user_details', user_id=user_item.id) }}" class="text-primary fw-bold">{{ user_item.username }}</a></td>
+                    <td>{{ user_item.full_name if user_item.full_name else 'N/A' }}</td>
+                    <td>{{ user_item.email }}</td>
+                    <td>
+                        {% if user_item.is_admin %}
+                            <span class="badge bg-success">Yes</span>
+                        {% else %}
+                            <span class="badge bg-secondary">No</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('admin.user_details', user_id=user_item.id) }}" class="btn btn-sm btn-outline-info">View Details</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info mt-4" role="alert">
+        No users found matching "{{ search_term }}".
+    </div>
+    {% endif %}
+{% endif %}
+
+{% if search_category == 'lots' or search_category == 'pincode' %}
+    {% if lots_found %}
+    <h3 class="mt-4 mb-3">{{ lots_found|length }} Parking Lots Found @{{ search_term if search_term else 'all' }} location</h3>
+    <div class="table-responsive mb-4">
+        <table class="table table-striped table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Address</th>
+                    <th>Pin Code</th>
+                    <th>Price/Hour</th>
+                    <th>Capacity</th>
+                    <th>Available</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lot in lots_found %}
+                <tr>
+                    <td>{{ lot.id }}</td>
+                    <td><a href="{{ url_for('admin.view_lot_spots', lot_id=lot.id) }}" class="text-primary fw-bold">{{ lot.name }}</a></td>
+                    <td>{{ lot.address if lot.address else 'N/A' }}</td>
+                    <td>{{ lot.pin_code }}</td>
+                    <td>₹{{ "%.2f"|format(lot.price_per_hour) }}</td>
+                    <td>{{ lot.maximum_capacity }}</td>
+                    <td><span class="badge bg-success">{{ lot.spots.filter_by(status='Available').count() }}</span></td>
+                    <td class="text-nowrap">
+                        <a href="{{ url_for('admin.edit_parking_lot', lot_id=lot.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                        <a href="{{ url_for('admin.view_lot_spots', lot_id=lot.id) }}" class="btn btn-sm btn-outline-primary">View Spots</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info mt-4" role="alert">
+        No parking lots found matching "{{ search_term }}".
+    </div>
+    {% endif %}
+{% endif %}
+{% endblock %}

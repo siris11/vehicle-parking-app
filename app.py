@@ -4,8 +4,11 @@ from flask_login import LoginManager
 from flask_bootstrap import Bootstrap5
 from datetime import datetime
 from werkzeug.security import generate_password_hash 
-from models import db, User
+from models import db, User 
 from routes import main, auth, admin, user
+from dotenv import load_dotenv 
+
+load_dotenv() 
 
 login_manager = LoginManager()
 
@@ -13,11 +16,14 @@ def create_app(config_class=None):
     app = Flask(__name__, instance_relative_config=True)
 
     app.config.from_mapping(
-        SECRET_KEY=os.environ.get('SECRET_KEY', 'dev_secret_key'),
+        SECRET_KEY=os.environ.get('SECRET_KEY'),
         SQLALCHEMY_DATABASE_URI=f"sqlite:///{os.path.join(app.instance_path, 'app.db')}",
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         BOOTSTRAP_SERVE_LOCAL=True, 
     )
+
+    if not app.config.get('SECRET_KEY'):
+        raise RuntimeError("SECRET_KEY environment variable is not set.")
 
     if config_class:
         app.config.from_object(config_class)
@@ -42,9 +48,7 @@ def create_app(config_class=None):
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
-
    
-
     app.register_blueprint(main.bp) 
     app.register_blueprint(auth.bp)
     app.register_blueprint(admin.bp, url_prefix='/admin')
@@ -57,21 +61,24 @@ if __name__ == '__main__':
 
     with app.app_context():
         db.create_all() 
-        default_admin_username = 'admin'
-        default_admin_password = 'admin098'
+        
+        default_admin_username = os.environ.get('ADMIN_USERNAME')
+        default_admin_password = os.environ.get('ADMIN_PASSWORD')
 
         admin_user = User.query.filter_by(username=default_admin_username, is_admin=True).first()
 
         if not admin_user:
             new_admin = User(
                 username=default_admin_username, 
-                full_name='admin',
-                email='admin@gmail.com', 
+                full_name='admin', 
+                email='admin@admin.com', 
                 password_hash=generate_password_hash(default_admin_password), 
                 is_admin=True
             )
             db.session.add(new_admin)
             db.session.commit()
-            print(f"Default admin user created: username '{default_admin_username}', password '{default_admin_password}'. **Change this password immediately!**")
+            print(f"The password for '{default_admin_username}' is set. Change it immediately after first login!**")
+        else:
+            print(f"Admin user '{default_admin_username}' already exists. No new admin user created.")
 
-    app.run(debug=True)
+app.run(debug=True)

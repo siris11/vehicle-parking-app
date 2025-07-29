@@ -4,13 +4,12 @@ from functools import wraps
 from forms import ParkingLotForm
 from models import db, ParkingLot, ParkingSpot, User, Reservation 
 from datetime import datetime, timedelta
-from sqlalchemy import func 
+from sqlalchemy import func, or_
 import pytz 
 
 bp = Blueprint('admin', __name__)
 IST = pytz.timezone('Asia/Kolkata')
 
-# Decorator to ensure user is admin
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -24,7 +23,7 @@ def admin_required(f):
 @login_required
 @admin_required
 def dashboard():
-    # --- Data for Summary Cards & Chart 1 (Spot Status) ---
+    # Spot Status
     lots = ParkingLot.query.order_by(ParkingLot.name).all()
     
     total_spots = int(ParkingSpot.query.count() or 0)
@@ -36,26 +35,25 @@ def dashboard():
 
     current_lots = lots if lots else []
 
-    # --- Data for Chart 2 (Reservation Status Breakdown) ---
+    # Reservation Status Breakdown
     pending_reservations = Reservation.query.filter_by(status='pending').count()
     active_reservations = Reservation.query.filter_by(status='active').count()
     completed_reservations = Reservation.query.filter_by(status='completed').count()
     cancelled_reservations = Reservation.query.filter_by(status='cancelled').count()
 
-    # --- Data for Chart 3 (Daily Bookings Trend - Last 7 Days) ---
+    # Daily Bookings 7 days
     daily_reservation_labels = []
     daily_reservation_counts = []
     
-    # Get current UTC time, localize it to UTC, then convert to IST
+    # UTC to IST
     now_utc = datetime.utcnow().replace(tzinfo=pytz.utc)
     now_ist = now_utc.astimezone(IST)
-    today_ist = now_ist.date() # Get today's date in IST
+    today_ist = now_ist.date() 
 
-    for i in range(6, -1, -1): # Loop for last 7 days including today
+    for i in range(6, -1, -1): 
         date_ist = today_ist - timedelta(days=i)
         daily_reservation_labels.append(date_ist.strftime('%b %d'))
         
-        # Calculate start and end of the IST day in UTC for database query
         start_of_ist_day_utc = IST.localize(datetime(date_ist.year, date_ist.month, date_ist.day, 0, 0, 0)).astimezone(pytz.utc)
         end_of_ist_day_utc = IST.localize(datetime(date_ist.year, date_ist.month, date_ist.day, 23, 59, 59)).astimezone(pytz.utc)
 
@@ -65,7 +63,7 @@ def dashboard():
         ).count()
         daily_reservation_counts.append(count)
 
-    # --- Data for Daily Revenue Trend (Chart 4) ---
+    # Revenue chart
     daily_revenue_labels = []
     daily_revenue_amounts = []
     
@@ -119,6 +117,52 @@ def dashboard():
 def list_parking_lots():
     lots = ParkingLot.query.order_by(ParkingLot.name).all()
     return render_template('admin/list_parking_lots.html', lots=lots, title='Manage Parking Lots')
+
+@bp.route('/search', methods=['GET'])
+@login_required
+@admin_required
+def search_all():
+    search_term = request.args.get('search_term', '').strip()
+    search_category = request.args.get('search_category')
+
+    users_found = []
+    lots_found = []
+    
+    if not search_term:
+        if search_category == "users":
+            users_found = User.query.order_by(User.username).all()
+        elif (search_category == "lots" or search_category == "pincode"):
+            lots_found = ParkingLot.query.order_by(ParkingLot.name).all()
+
+    elif search_term and search_category:
+        search_pattern = f"%{search_term}%"
+
+        if search_category == 'users':
+            users_found = User.query.filter(
+                or_(
+                    User.username.ilike(search_pattern),
+                    User.email.ilike(search_pattern),
+                    User.full_name.ilike(search_pattern)
+                )
+            ).order_by(User.username).all()
+
+        elif search_category == 'lots':
+            lots_found = ParkingLot.query.filter(
+                or_(
+                    ParkingLot.name.ilike(search_pattern),
+                    ParkingLot.address.ilike(search_pattern)
+                )
+            ).order_by(ParkingLot.name).all()
+
+        elif search_category == 'pincode':
+            lots_found = ParkingLot.query.filter(ParkingLot.pin_code.ilike(search_pattern)).order_by(ParkingLot.name).all()
+
+    return render_template('admin/search_results.html',
+                           title=f"Search Results for '{search_term}'",
+                           search_term=search_term,
+                           search_category=search_category,
+                           users_found=users_found,
+                           lots_found=lots_found)
 
 @bp.route('/parking_lot/new', methods=['GET', 'POST'])
 @login_required
@@ -227,7 +271,7 @@ def delete_parking_lot(lot_id):
     ).count()
 
     if active_or_pending_reservations_in_lot > 0:
-        flash(f'Cannot delete parking lot \'{lot.name}\'. It has active or pending reservations.', 'danger')
+        flash(f'NOt possible to delete this lot \'{lot.name}\'. It has active or pending reservations.', 'danger')
         return redirect(url_for('admin.list_parking_lots')) 
 
     lot_name = lot.name
@@ -256,7 +300,6 @@ def view_lot_spots(lot_id):
 def view_spot_details(spot_id):
     spot = ParkingSpot.query.get_or_404(spot_id)
     
-    # Get the active reservation if any
     reservation = Reservation.query.filter_by(
         spot_id=spot.id,
         status='active' 
@@ -268,7 +311,7 @@ def view_spot_details(spot_id):
     
     current_time_ist_str = datetime.utcnow().replace(tzinfo=pytz.utc).astimezone(IST).strftime('%Y-%m-%d %H:%M:%S (IST)')
 
-    # Prepare reservation history for this spot, converting timestamps to IST strings
+    # Reservation history for spot
     all_spot_reservations = spot.spot_reservations.order_by(Reservation.booking_timestamp.desc()).all()
     reservations_history_for_template = []
     for res in all_spot_reservations:
@@ -325,7 +368,7 @@ def delete_spot(spot_id):
         lot.maximum_capacity -= 1
     
     db.session.commit()
-    flash(f'Parking spot {spot_number_deleted} in lot {lot.name} has been deleted. Lot capacity adjusted.', 'success')
+    flash(f'Parking spot {spot_number_deleted} in lot {lot.name} has been deleted. Lot capacity decreased!!', 'success')
     return redirect(url_for('admin.view_lot_spots', lot_id=lot.id))
 
 
@@ -356,15 +399,15 @@ def user_details(user_id):
         
         reservations_for_template.append({
             'id': res.id,
-            'parking_spot': res.parking_spot, # Keep object for other attributes
+            'parking_spot': res.parking_spot, 
             'vehicle_number': res.vehicle_number,
-            'booking_timestamp_ist_str': booking_ist_str, # Pass as string
-            'check_in_timestamp_ist_str': check_in_ist_str, # Pass as string
-            'check_out_timestamp_ist_str': check_out_ist_str, # Pass as string
+            'booking_timestamp_ist_str': booking_ist_str, 
+            'check_in_timestamp_ist_str': check_in_ist_str, 
+            'check_out_timestamp_ist_str': check_out_ist_str,
             'total_cost': res.total_cost,
             'status': res.status,
             'user_id': res.user_id,
-            'tenant': res.tenant # Keep object for username
+            'tenant': res.tenant 
         })
 
     return render_template('admin/user_details.html', 

@@ -34,6 +34,21 @@
                         {% endif %}
                     {% endif %}
                 </ul>
+
+                {% if current_user.is_authenticated and current_user.is_admin %}
+                <form class="d-flex ms-auto me-3" action="{{ url_for('admin.search_all') }}" method="GET">
+                    <div class="input-group">
+                        <input class="form-control" type="search" placeholder="Search..." aria-label="Search" name="search_term" value="{{ request.args.get('search_term', '') }}">
+                        <select class="form-select" name="search_category" aria-label="Search category">
+                            <option value="users" {% if request.args.get('search_category') == 'users' %}selected{% endif %}>Users</option>
+                            <option value="lots" {% if request.args.get('search_category') == 'lots' %}selected{% endif %}>Location</option>
+                            <option value="pincode" {% if request.args.get('search_category') == 'pincode' %}selected{% endif %}>Pin Code</option>
+                        </select>
+                        <button class="btn btn-outline-primary" type="submit">Search</button>
+                    </div>
+                </form>
+                {% endif %}
+                
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                     {% if current_user.is_authenticated %}
                         <li class="nav-item dropdown">
