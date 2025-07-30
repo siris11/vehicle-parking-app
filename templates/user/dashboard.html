@@ -69,7 +69,7 @@
                                     <p class="card-text text-muted">{{ lot.address }}, {{ lot.pin_code }}</p>
                                     <p class="card-text">Price: ₹{{ "%.2f"|format(lot.price_per_hour) }} / hour</p>
                                     <p class="card-text">Available Spots: <span class="badge bg-success">{{ lot.spots.filter_by(status='Available').count() }} / {{ lot.maximum_capacity }}</span></p>
-                                    <div class="mt-auto"> {# Push button to bottom #}
+                                    <div class="mt-auto"> 
                                         {% if lot.spots.filter_by(status='Available').count() > 0 %}
                                             <a href="{{ url_for('user.book_spot', lot_id=lot.id) }}" class="btn btn-primary btn-sm">Book Spot</a>
                                         {% else %}

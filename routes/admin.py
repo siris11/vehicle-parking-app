@@ -23,7 +23,6 @@ def admin_required(f):
 @login_required
 @admin_required
 def dashboard():
-    # Spot Status
     lots = ParkingLot.query.order_by(ParkingLot.name).all()
     
     total_spots = int(ParkingSpot.query.count() or 0)
@@ -188,7 +187,7 @@ def create_parking_lot():
         
         db.session.commit()
         flash(f'Parking lot \'{new_lot.name}\' created successfully with {new_lot.maximum_capacity} spots!', 'success')
-        return redirect(url_for('admin.list_parking_lots')) # Corrected blueprint
+        return redirect(url_for('admin.list_parking_lots'))
     return render_template('admin/create_edit_parking_lot.html', form=form, title='Create Parking Lot', legend='New Parking Lot') 
 
 @bp.route('/parking_lot/edit/<int:lot_id>', methods=['GET', 'POST'])
@@ -338,8 +337,8 @@ def view_spot_details(spot_id):
                              spot=spot, 
                              reservation=reservation, 
                              title=f'Details for Spot {spot.spot_number}', 
-                             parked_at_ist_str=parked_at_ist_str, # IST string for active reservation
-                             current_time_ist_str=current_time_ist_str, # IST string for current time
+                             parked_at_ist_str=parked_at_ist_str, 
+                             current_time_ist_str=current_time_ist_str, 
                              reservations_history=reservations_history_for_template) 
 
 

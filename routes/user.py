@@ -115,7 +115,7 @@ def dashboard():
 
     # 3. Most Visited Lots since 10 days 
     most_visited_lots_raw = {}
-    for res in completed_reservations[:10]: # Take last 10
+    for res in completed_reservations[:10]:
         if res.parking_spot and res.parking_spot.parking_lot:
             lot_name = res.parking_spot.parking_lot.name
             most_visited_lots_raw[lot_name] = most_visited_lots_raw.get(lot_name, 0) + 1
