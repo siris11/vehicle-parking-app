@@ -6,7 +6,6 @@ Bootstrap-Flask
 email_validator 
 Werkzeug
 MarkupSafe
-Flask-Bootstrap
 flask-login
 pytz
 python-dotenv
