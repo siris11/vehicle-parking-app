@@ -48,11 +48,14 @@ This is a web application designed to streamline parking lot management and rese
 
 Prerequisites
 1. Clone the Repository
-git clone [<repo_url>](https://github.com/22f3001809/vehicle-parking-app.git)
-cd vehicle-parking-app
+1. Clone the repository and start the backend server:
+   ```bash
+   git clone [<repo_url>](https://github.com/22f3001809/vehicle-parking-app/)
+   cd [<repo_name>](https://github.com/22f3001809/vehicle-parking-app/)/server
+   ```
 
 2. Set up a Virtual Environment
-```python3/python -m venv venv```
+`python3/python -m venv venv`
 # On Windows:
 .\venv\Scripts\activate
 # On macOS/Linux:
