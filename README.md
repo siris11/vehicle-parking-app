@@ -21,8 +21,6 @@ This is a web application designed to streamline parking lot management and rese
 - Authentication: Flask-Login, Werkzeug
 
 ## API Endpoints
-
-
 - ``GET POST /auth/login`` - User login
 - ```GET POST /auth/register``` - New user registration
 - ``` GET /admin/dashboard``` - Admin dashboard overview
