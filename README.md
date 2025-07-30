@@ -78,7 +78,7 @@ Prerequisites
 
 6. Run the Application
    
-     `python run.py`
+     `python app.py`
 
 Default Admin Credentials:
 ``` bash
