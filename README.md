@@ -47,35 +47,43 @@ This is a web application designed to streamline parking lot management and rese
 
 
 Prerequisites
-1. Clone the Repository
-git clone [<repo_url>](https://github.com/22f3001809/vehicle-parking-app.git)
-cd vehicle-parking-app
+1. Clone the Repository:
+   ```bash
+   git clone [<repo_url>](https://github.com/22f3001809/vehicle-parking-app/)
+   cd [<repo_name>](https://github.com/22f3001809/vehicle-parking-app/)
+   ```
 
-2. Set up a Virtual Environment
-```python3/python -m venv venv```
-# On Windows:
-.\venv\Scripts\activate
-# On macOS/Linux:
-source venv/bin/activate
 
-3. Install Dependencies
-```pip install -r requirements.txt```
+2. Set up a Virtual Environment:
+   
+   `python3/python -m venv venv`
+   
+   ### On Windows:
+   `.\venv\Scripts\activate`
+   ### On macOS/Linux:
+   `source venv/bin/activate`
+   
+3. Install Dependencies:
+   
+    `pip install -r requirements.txt`
 
 (If requirements.txt is missing, create it after installing core dependencies: pip freeze > requirements.txt)
 
 4. Configure Environment Variables
-Create a .env file in the project root with the following:
-
-SECRET_KEY=your_secret_key_here
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=admin098
-(Replace your_secret_key_here with a strong, randomly generated key.)
+   Create a .env file in the project root with the following:
+   
+   ``` bash
+   SECRET_KEY=your_secret_key_here
+   ADMIN_USERNAME=admin
+   ADMIN_PASSWORD=admin098
+   (Replace your_secret_key_here with a strong, randomly generated key.)
 
 6. Run the Application
-```python run.py```
+   
+     `python run.py`
 
 Default Admin Credentials:
-
+``` bash
 Username: admin
 Password: admin098
 (Remember to change these after first login)
