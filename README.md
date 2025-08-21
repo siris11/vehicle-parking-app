@@ -1,6 +1,8 @@
 # ParkNxt: Parking Management Application
 This is a web application designed to streamline parking lot management and reservations for both adminisand users.
 
+# Demo : 
+[Cick here to view the demo](https://drive.google.com/file/d/1h5pkJpwSGMF71U0dpJjQC3Ow2KmkrC-Y/view?usp=sharing)  
 ## Features
 - User Authentication: Secure sign-up and login for admin and regular users.
 
@@ -16,30 +18,9 @@ This is a web application designed to streamline parking lot management and rese
 
 - Database: SQLite
 
-- Frontend: HTML5, CSS3, Jinja2, Bootstrap 5, Chart.js
+- Frontend: HTML5, CSS, Jinja2, Bootstrap 5, Chart.js
 
 - Authentication: Flask-Login, Werkzeug
-
-## API Endpoints
-- ``GET POST /auth/login`` - User login
-- ```GET POST /auth/register``` - New user registration
-- ``` GET /admin/dashboard``` - Admin dashboard overview
-- ``` GET /admin/parking_lots``` - List all parking lots
-- ```GET /admin/users``` - List all users
-- ``` GET, POST /admin/parking_lot/new``` - Add a new parking lot
-- ``` GET, POST /admin/parking_lot/edit/:lot_id``` - Edit an existing parking lot
-- ```POST /admin/parking_lot/delete/:lot_id```  - Delete a parking lot
-- ```GET /admin/view_spots/:lot_id``` - View spots within a lot
-- ```GET /admin/view_spot_details/:spot_id``` - View details of a specific spot
-- ```GET /admin/user_details/:user_id``` - View details of a specific user
-
-- ```GET, POST /user/dashboard ``` - User dashboard (includes search/booking)
--  ```GET, POST /user/book_spot/:lot_id``` - Book a spot in a lot
-- ```GET /user/park_out_page/:reservation_id``` -  Display park-out confirmation
-
-- ``` GET, POST /user/edit_profile``` - Admin,User's own profile edit
-- ```GET, POST /user/change_password``` - Admin, User's own password change
-
 
 ## Setup Instructions
 
@@ -47,8 +28,8 @@ This is a web application designed to streamline parking lot management and rese
 Prerequisites
 1. Clone the Repository:
    ```bash
-   git clone [<repo_url>](https://github.com/22f3001809/vehicle-parking-app/)
-   cd [<repo_name>](https://github.com/22f3001809/vehicle-parking-app/)
+   git clone [<repo_url>](https://github.com/siris11/vehicle-parking-app/)
+   cd [<repo_name>](https://github.com/siris11/vehicle-parking-app/)
    ```
 
 
@@ -73,15 +54,15 @@ Prerequisites
    ``` bash
    SECRET_KEY=your_secret_key_here
    ADMIN_USERNAME=admin
-   ADMIN_PASSWORD=admin098
-   (Replace your_secret_key_here with a strong, randomly generated key.)
+   ADMIN_PASSWORD= default_password
+   (Replace your_secret_key_here with a strong, randomly generated key, same with the ADMIN_PASSWORD)
 
 6. Run the Application
    
-     `python app.py`
+     `python3 app.py`
 
 Default Admin Credentials:
 ``` bash
 Username: admin
-Password: admin098
+Password: default_password
 (Remember to change these after first login)
