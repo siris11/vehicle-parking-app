@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, IntegerField, FloatField, TextAreaField, SelectField
 from wtforms.validators import DataRequired, Email, EqualTo, ValidationError, NumberRange, Length, Regexp
 from flask_login import current_user
-from models import User, ParkingLot
+from models import User, ParkingLot, Reservation
 
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
@@ -44,6 +44,7 @@ class ParkingLotForm(FlaskForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._original_name = kwargs.get('obj').name if kwargs.get('obj') else None
+        self._original_pin_code = kwargs.get('obj').pin_code if kwargs.get('obj') else None
 
     def validate_name(self, name):
         if hasattr(self, '_original_name') and self._original_name == name.data:
@@ -52,9 +53,27 @@ class ParkingLotForm(FlaskForm):
         if lot:
             raise ValidationError('A parking lot with this name already exists.')
 
+    def validate_pin_code(self, pin_code):
+        if hasattr(self, '_original_pin_code') and self._original_pin_code == pin_code.data:
+            return
+        lot = ParkingLot.query.filter_by(pin_code=pin_code.data).first()
+        if lot:
+            raise ValidationError('A parking lot with this pin code already exists.')
+
 class BookSpotForm(FlaskForm):
     vehicle_number = StringField('Vehicle Number', validators=[DataRequired(), Length(min=3, max=20)])
     submit = SubmitField('Confirm Booking')
+
+    def validate_vehicle_number(self, vehicle_number):
+        existing_reservation = Reservation.query.filter(
+            Reservation.vehicle_number == vehicle_number.data,
+            Reservation.status.in_(['pending', 'active'])
+        ).first()
+        if existing_reservation:
+            raise ValidationError(
+                'This vehicle already has an active or pending booking. '
+                'Please complete or cancel the existing booking first.'
+            )
 
 class CheckInForm(FlaskForm):
     submit = SubmitField('Check In Now')

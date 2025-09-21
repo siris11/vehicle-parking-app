@@ -9,3 +9,4 @@ MarkupSafe
 flask-login
 pytz
 python-dotenv
+flask-Migrate

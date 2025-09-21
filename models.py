@@ -27,7 +27,7 @@ class ParkingLot(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False, unique=True) 
     address = db.Column(db.String(255),nullable=False)
-    pin_code = db.Column(db.String(10),nullable=False)
+    pin_code = db.Column(db.String(10),nullable=False, unique=True)
     price_per_hour = db.Column(db.Float, nullable=False)
     maximum_capacity = db.Column(db.Integer, nullable=False) 
     is_active = db.Column(db.Boolean, default=True, nullable=False)

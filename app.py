@@ -7,6 +7,7 @@ from werkzeug.security import generate_password_hash
 from models import db, User 
 from routes import main, auth, admin, user
 from dotenv import load_dotenv 
+from flask_migrate import Migrate
 
 load_dotenv() 
 
@@ -36,6 +37,7 @@ def create_app(config_class=None):
         pass 
 
     db.init_app(app) 
+    Migrate(app, db)
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
     login_manager.login_message_category = 'info' 
@@ -56,29 +58,34 @@ def create_app(config_class=None):
    
     return app
 
+app = create_app() 
+
+@app.cli.command("create-admin")
+def create_admin():
+    """Creates the default admin user."""
+    default_admin_username = os.environ.get('ADMIN_USERNAME')
+    default_admin_password = os.environ.get('ADMIN_PASSWORD')
+
+    if not default_admin_username or not default_admin_password:
+        print("ADMIN_USERNAME and ADMIN_PASSWORD environment variables must be set.")
+        return
+
+    admin_user = User.query.filter_by(username=default_admin_username, is_admin=True).first()
+
+    if not admin_user:
+        new_admin = User(
+            username=default_admin_username, 
+            full_name='admin', 
+            email='admin@admin.com', 
+            is_admin=True
+        )
+        new_admin.set_password(default_admin_password)
+        db.session.add(new_admin)
+        db.session.commit()
+        print(f"Admin user '{default_admin_username}' created.")
+        print(f"**The password for '{default_admin_username}' is set. Change it immediately after first login!**")
+    else:
+        print(f"Admin user '{default_admin_username}' already exists. No new admin user created.")
+
 if __name__ == '__main__':
-    app = create_app() 
-
-    with app.app_context():
-        db.create_all() 
-        
-        default_admin_username = os.environ.get('ADMIN_USERNAME')
-        default_admin_password = os.environ.get('ADMIN_PASSWORD')
-
-        admin_user = User.query.filter_by(username=default_admin_username, is_admin=True).first()
-
-        if not admin_user:
-            new_admin = User(
-                username=default_admin_username, 
-                full_name='admin', 
-                email='admin@admin.com', 
-                password_hash=generate_password_hash(default_admin_password), 
-                is_admin=True
-            )
-            db.session.add(new_admin)
-            db.session.commit()
-            print(f"The password for '{default_admin_username}' is set. Change it immediately after first login!**")
-        else:
-            print(f"Admin user '{default_admin_username}' already exists. No new admin user created.")
-
-app.run(debug=True)
+    app.run(debug=True)
