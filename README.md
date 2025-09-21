@@ -1,5 +1,5 @@
 # ParkNxt: Parking Management Application
-This is a web application designed to streamline parking lot management and reservations for both adminisand users.
+This is a web application designed to streamline parking lot management and reservations for both admin and users.
 
 # Demo : 
 [Cick here to view the demo](https://drive.google.com/file/d/1h5pkJpwSGMF71U0dpJjQC3Ow2KmkrC-Y/view?usp=sharing)  
@@ -8,7 +8,7 @@ This is a web application designed to streamline parking lot management and rese
 
 - Admin Dashboard: Manage parking lots, spots, and view user/reservation data.
    - Manage Parking lot: Admin can add a new lot, view the spots, delete a lot (if it's not occupied)
-   - Search: Admin can search Users and also search lots by location, pincode,
+   - Search: Admin can search Users and also search lots by location, pincode.
 
 - User Functionality: Search for lots, book spots, check-in/out, and manage reservations.
 
@@ -22,13 +22,7 @@ This is a web application designed to streamline parking lot management and rese
 
 - Authentication: Flask-Login, Werkzeug
 
-## Local Setup Instructions
-
-Follow these steps to get the application running on your local machine.
-
-### Prerequisites
-- Python 3.8+
-- Git
+## Setup Instructions
 
 ### 1. Clone the Repository
 ```bash
@@ -57,10 +51,7 @@ pip install -r requirements.txt
 ```
 
 ### 4. Configure Environment Variables
-Create a local environment file 
-```bash
-     .env
-```
+Create a local environment file ``.env``
 
 Next, add a strong, unique `SECRET_KEY` in the .env file. 
 
