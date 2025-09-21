@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash
 from models import db, User 
 from routes import main, auth, admin, user
 from dotenv import load_dotenv 
-from flask_migrate import Migrate
+from flask_migrate import Migrate, upgrade
 
 load_dotenv() 
 
@@ -38,6 +38,11 @@ def create_app(config_class=None):
 
     db.init_app(app) 
     Migrate(app, db)
+
+    # Automatically apply migrations on startup
+    with app.app_context():
+        upgrade()
+
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
     login_manager.login_message_category = 'info' 

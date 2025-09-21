@@ -22,47 +22,56 @@ This is a web application designed to streamline parking lot management and rese
 
 - Authentication: Flask-Login, Werkzeug
 
-## Setup Instructions
+## Local Setup Instructions
+
+Follow these steps to get the application running on your local machine.
 
 
-Prerequisites
-1. Clone the Repository:
-   ```bash
-   git clone [<repo_url>](https://github.com/siris11/vehicle-parking-app/)
-   cd [<repo_name>](https://github.com/siris11/vehicle-parking-app/)
-   ```
+### 1. Clone the Repository
+```bash
+git clone https://github.com/siris11/vehicle-parking-app/
+cd vehicle-parking-app
+```
 
+### 2. Create and Activate a Virtual Environment
+```bash
+# Create the virtual environment
+python3 -m venv venv
+```
+**Activate the environment:**
+- **On macOS/Linux:**
+  ```bash
+  source venv/bin/activate
+  ```
+- **On Windows:**
+  ```bash
+  .\venv\Scripts\activate
+  ```
 
-2. Set up a Virtual Environment:
-   
-   `python3/python -m venv venv`
-   
-   ### On Windows:
-   `.\venv\Scripts\activate`
-   ### On macOS/Linux:
-   `source venv/bin/activate`
-   
-3. Install Dependencies:
-   
-    `pip install -r requirements.txt`
+### 3. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
 
-(If requirements.txt is missing, create it after installing core dependencies: pip freeze > requirements.txt)
+### 4. Configure Environment Variables
+Create a local environment file by copying the example template.
+```bash
+cp .env.example .env
+```
+Next, open the new `.env` file and add a strong, unique `SECRET_KEY`. 
 
-4. Configure Environment Variables
-   Create a .env file in the project root with the following:
-   
-   ``` bash
-   SECRET_KEY=your_secret_key_here
-   ADMIN_USERNAME=admin
-   ADMIN_PASSWORD= default_password
-   (Replace your_secret_key_here with a strong, randomly generated key, same with the ADMIN_PASSWORD)
+**To generate a secure `SECRET_KEY`**, you can run this in a Python shell:
+```python
+import secrets
+secrets.token_hex(24)
+```
+Paste the generated key into your `.env` file.
 
-6. Run the Application
-   
-     `python3 app.py`
+### 5. Run the Application
+```bash
+flask run
+```
+The application will be available at `http://127.0.0.1:5000`. The database will be created and configured automatically on the first run.
 
-Default Admin Credentials:
-``` bash
-Username: admin
-Password: default_password
-(Remember to change these after first login)
+### 6. Create an Account
+Navigate to the application in your browser and use the "Register" button to create a new user account.
